@@ -18,6 +18,7 @@ class SYSUMM01(BaseImageDataset):
 
         gallery = self._process_galler(self.dataset_dir)
         query = self._process_query(self.dataset_dir)
+        train_rgb, train_ir = self._process_train_rgb(self.dataset_dir)
 
 
 
@@ -28,9 +29,18 @@ class SYSUMM01(BaseImageDataset):
 
         self.gallery = gallery
         self.query = query
+        self.train_rgb = train_rgb
+        self.train_ir = train_ir
 
         self.num_gallery_pids, self.num_gallery_imgs, self.num_gallery_cams, self.num_gallery_vids = self.get_imagedata_info(self.gallery)
         self.num_query_pids, self.num_query_imgs, self.num_query_cams, self.num_query_vids = self.get_imagedata_info(self.query)
+        self.num_train_rgb_pids, self.num_train_rgb_imgs, self.num_train_rgb_cams, self.num_train_rgb_vids = self.get_imagedata_info(self.train_rgb)
+        self.num_train_ir_pids, self.num_train_ir_imgs, self.num_train_ir_cams, self.num_train_ir_vids = self.get_imagedata_info(self.train_ir)
+
+    def _check_before_run(self):
+        if not osp.exists(self.dataset_dir):
+            raise RuntimeError("'{}' is not available".format(self.dataset_dir))
+
 
     def _process_galler(self, dir_path, mode = 'all', trial = 0, relabel=False):
 
@@ -110,5 +120,69 @@ class SYSUMM01(BaseImageDataset):
             dataset.append((img_path, self.pid_begin + pid, camid, 0))
         return dataset
 
-    def _process_train_rgb(self, ):
-        pass
+    def _process_train_rgb(self, dir_path, relabel=True):
+
+        rgb_cameras = ['cam1', 'cam2', 'cam4', 'cam5']
+        ir_cameras = ['cam3', 'cam6']
+
+        # load id info
+        file_path_train = os.path.join(dir_path, 'exp\\train_id.txt')
+        file_path_val = os.path.join(dir_path, 'exp\\val_id.txt')
+
+        with open(file_path_train, 'r') as file:
+            ids = file.read().splitlines()
+            ids = [int(y) for y in ids[0].split(',')]
+            id_train = ["%04d" % x for x in ids]
+
+        with open(file_path_val, 'r') as file:
+            ids = file.read().splitlines()
+            ids = [int(y) for y in ids[0].split(',')]
+            id_val = ["%04d" % x for x in ids]
+
+        # combine train and val split
+        # 这里不知道要不要合并train和val，先不注释掉
+        id_train.extend(id_val)
+
+        files_rgb = []
+        files_ir = []
+        for id in sorted(id_train):
+            for cam in rgb_cameras:
+                img_dir = os.path.join(dir_path, cam, id)
+                if os.path.isdir(img_dir):
+                    new_files = sorted([img_dir + '\\' + i for i in os.listdir(img_dir)])
+                    files_rgb.extend(new_files)
+
+            for cam in ir_cameras:
+                img_dir = os.path.join(dir_path, cam, id)
+                if os.path.isdir(img_dir):
+                    new_files = sorted([img_dir + '\\' + i for i in os.listdir(img_dir)])
+                    files_ir.extend(new_files)
+
+        files_all = files_rgb.copy()
+        files_all.extend(files_ir)
+
+        # relabel
+        pid_container = set()
+        for img_path in files_ir:
+            pid = int(img_path[-13:-9])
+            pid_container.add(pid)
+        pid2label = {pid: label for label, pid in enumerate(pid_container)}
+        fix_image_width = 144
+        fix_image_height = 288
+
+        dataset_rgb = []
+        dataset_ir = []
+
+        for img_path in files_rgb:
+            camid, pid = int(img_path[-15]), int(img_path[-13:-9])
+            if pid == -1: continue
+            if relabel: pid = pid2label[pid]
+            dataset_rgb.append((img_path, pid, camid, 0))
+
+        for img_path in files_ir:
+            camid, pid = int(img_path[-15]), int(img_path[-13:-9])
+            if pid == -1: continue
+            if relabel: pid = pid2label[pid]
+            dataset_ir.append((img_path, pid, camid, 0))
+
+        return dataset_rgb, dataset_ir
