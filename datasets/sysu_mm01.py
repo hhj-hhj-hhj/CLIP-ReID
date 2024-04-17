@@ -18,7 +18,7 @@ class SYSUMM01(BaseImageDataset):
 
         gallery = self._process_galler(self.dataset_dir)
         query = self._process_query(self.dataset_dir)
-        train_rgb, train_ir = self._process_train_rgb(self.dataset_dir)
+        train_rgb, train_ir = self._process_train(self.dataset_dir)
 
 
 
@@ -120,7 +120,7 @@ class SYSUMM01(BaseImageDataset):
             dataset.append((img_path, self.pid_begin + pid, camid, 0))
         return dataset
 
-    def _process_train_rgb(self, dir_path, relabel=True):
+    def _process_train(self, dir_path, relabel=True):
 
         rgb_cameras = ['cam1', 'cam2', 'cam4', 'cam5']
         ir_cameras = ['cam3', 'cam6']
