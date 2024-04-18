@@ -25,7 +25,7 @@ class SYSUMM01(BaseImageDataset):
 
         if(verbose):
             print("=> SYSU-MM01 loaded")
-            self.print_dataset_statistics(gallery, [], [])
+            self.print_dataset_statistics(train_rgb, query, gallery)
 
         self.gallery = gallery
         self.query = query
