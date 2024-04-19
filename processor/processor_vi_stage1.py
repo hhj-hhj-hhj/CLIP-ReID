@@ -51,6 +51,10 @@ def do_train_stage1(cfg,
                 for i, img_feat in zip(target, image_feature):
                     labels.append(i)
                     image_features.append(img_feat.cpu())
+        labels_list_rgb = torch.stack(labels, dim=0).cuda()  # N
+        image_features_list_rgb = torch.stack(image_features, dim=0).cuda()
+    image_features.clear()
+    labels.clear()
     with torch.no_grad():
         for n_iter, (img, vid, target_cam, target_view) in enumerate(train_loader_stage1_ir):
             img = img.to(device)
@@ -60,12 +64,17 @@ def do_train_stage1(cfg,
                 for i, img_feat in zip(target, image_feature):
                     labels.append(i)
                     image_features.append(img_feat.cpu())
-        labels_list = torch.stack(labels, dim=0).cuda()  # N
-        image_features_list = torch.stack(image_features, dim=0).cuda()
+        labels_list_ir = torch.stack(labels, dim=0).cuda()  # N
+        image_features_list_ir = torch.stack(image_features, dim=0).cuda()
 
         batch = cfg.SOLVER.STAGE1.IMS_PER_BATCH
-        num_image = labels_list.shape[0]
-        i_ter = num_image // batch
+
+        num_image_rgb = labels_list_rgb.shape[0]
+        num_image_ir = labels_list_ir.shape[0]
+
+        i_ter_rgb = num_image_rgb // batch
+        i_ter_ir = num_image_ir // batch
+
     del labels, image_features
 
     for epoch in range(1, epochs + 1):
@@ -73,18 +82,19 @@ def do_train_stage1(cfg,
         scheduler.step(epoch)
         model.train()
 
-        iter_list = torch.randperm(num_image).to(device)
-        for i in range(i_ter + 1):
+        iter_list_rgb = torch.randperm(num_image_rgb).to(device)
+        for i in range(i_ter_rgb + 1):
             optimizer.zero_grad()
-            if i != i_ter:
-                b_list = iter_list[i * batch:(i + 1) * batch]
+            if i != i_ter_rgb:
+                b_list_rgb = iter_list_rgb[i * batch:(i + 1) * batch]
             else:
-                b_list = iter_list[i * batch:num_image]
+                b_list_rgb = iter_list_rgb[i * batch:num_image_rgb]
 
-            target = labels_list[b_list]
-            image_features = image_features_list[b_list]
+            target = labels_list_rgb[b_list_rgb]
+            image_features = image_features_list_rgb[b_list_rgb]
             with amp.autocast(enabled=True):
-                text_features = model(label=target, get_text=True)
+                text_features = model(label=target,img_modal = 1, get_text=True)
+
             loss_i2t = xent(image_features, text_features, target, target)
             loss_t2i = xent(text_features, image_features, target, target)
 
@@ -100,7 +110,7 @@ def do_train_stage1(cfg,
             torch.cuda.synchronize()
             if (i + 1) % log_period == 0:
                 logger.info("Epoch[{}] Iteration[{}/{}] Loss: {:.3f}, Base Lr: {:.2e}"
-                            .format(epoch, (i + 1), len(train_loader_stage1),
+                            .format(epoch, (i + 1), len(train_loader_stage1_rgb),
                                     loss_meter.avg, scheduler._get_lr(epoch)[0]))
 
         if epoch % checkpoint_period == 0:
