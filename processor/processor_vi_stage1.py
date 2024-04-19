@@ -93,10 +93,10 @@ def do_train_stage1(cfg,
             target = labels_list_rgb[b_list_rgb]
             image_features = image_features_list_rgb[b_list_rgb]
             with amp.autocast(enabled=True):
-                text_features = model(label=target,img_modal = 1, get_text=True)
+                text_features_rgb = model(label=target,img_modal = 1, get_text=True)
 
-            loss_i2t = xent(image_features, text_features, target, target)
-            loss_t2i = xent(text_features, image_features, target, target)
+            loss_i2t = xent(image_features, text_features_rgb, target, target)
+            loss_t2i = xent(text_features_rgb, image_features, target, target)
 
             loss = loss_i2t + loss_t2i
 
