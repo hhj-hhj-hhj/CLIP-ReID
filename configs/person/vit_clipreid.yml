@@ -68,6 +68,12 @@ TEST:
   FEAT_NORM: 'yes'
 
 DATASETS:
+    NAMES: 'sysu_mm01'
+    ROOT_DIR: 'D:/Re-ID_Dataset/person/Infrared'
+OUTPUT_DIR: 'D:/Re-ID_Dataset/person/Infrared'
+
+
+
 #   NAMES: ('market1501')
 #   ROOT_DIR: ('')
 # OUTPUT_DIR: ''

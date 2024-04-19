@@ -40,29 +40,11 @@ if __name__ == "__main__":
 
     train_loader_rgb, train_loader_ir, train_loader_normal_rgb, train_loader_normal_ir, val_loader, num_query, num_classes_rgb, num_classes_ir, camera_num_rgb, camera_num_ir, view_num_rgb, view_num_ir = make_dataloader(cfg)
 
+    # 这里需要传入相机数，还不确定传入的相机数是否要将红外和可将光的相机数相加
     model = make_model(cfg, num_class=num_classes_rgb, camera_num=camera_num_rgb + camera_num_ir, view_num = view_num_rgb)
     model.load_param(cfg.TEST.WEIGHT)
 
-    if cfg.DATASETS.NAMES == 'VehicleID':
-        for trial in range(10):
-            train_loader, train_loader_normal, val_loader, num_query, num_classes, camera_num, view_num = make_dataloader(cfg)
-            rank_1, rank5, mAP = do_inference(cfg,
-                 model,
-                 val_loader,
-                 num_query)
-            if trial == 0:
-                all_rank_1 = rank_1
-                all_rank_5 = rank5
-                all_mAP = mAP
-            else:
-                all_rank_1 = all_rank_1 + rank_1
-                all_rank_5 = all_rank_5 + rank5
-                all_mAP = all_mAP + mAP
-
-            logger.info("rank_1:{}, rank_5 {} : trial : {}".format(rank_1, rank5, mAP, trial))
-        logger.info("sum_rank_1:{:.1%}, sum_rank_5 {:.1%}, sum_mAP {:.1%}".format(all_rank_1.sum()/10.0, all_rank_5.sum()/10.0, all_mAP.sum()/10.0))
-    else:
-       do_inference(cfg,
+    do_inference(cfg,
                  model,
                  val_loader,
                  num_query)

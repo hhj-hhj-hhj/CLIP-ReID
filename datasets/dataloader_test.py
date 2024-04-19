@@ -50,25 +50,25 @@ view_num_ir = dataset.num_train_ir_vids
 print(num_classes_ir,num_classes_rgb)
 
 
-writer = SummaryWriter('rgb')
+# writer = SummaryWriter('rgb')
 
 for i,data in enumerate(train_set_rgb):
-    if i == 10:
+    if i == 5:
         break
     print('-----------------')
     img, pid, camid, trackid, img_path = data
-    # TF.to_pil_image(img).show()
-    print(img_path)
-    writer.add_image('rgb', img, i)
+    TF.to_pil_image(img).show()
+    print(f'rgb模态{pid}号行人{camid}号相机{trackid}号视角，路径{img_path}')
+    # writer.add_image('rgb', img, i)
 
 for i,data in enumerate(train_set_ir):
-    if i == 10:
+    if i == 5:
         break
     print('-----------------')
     img, pid, camid, trackid, img_path = data
-    # TF.to_pil_image(img).show()
-    print(img_path)
-    writer.add_image('ir', img, i + 10)
+    TF.to_pil_image(img).show()
+    print(f'ir模态{pid}号行人{camid}号相机{trackid}号视角，路径{img_path}')
+    # writer.add_image('ir', img, i + 10)
 
 # writer.add_image('rgb', train_set_rgb[-1][0], 10)
-writer.close()
+# writer.close()

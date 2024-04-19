@@ -88,7 +88,7 @@ _C.DATASETS = CN()
 # List of the dataset names for training, as present in paths_catalog.py
 _C.DATASETS.NAMES = ('sysu_mm01')
 # Root directory where datasets should be used (and downloaded if not found)
-_C.DATASETS.ROOT_DIR = (r'D:\Re-ID_Dataset\person\Infrared')
+_C.DATASETS.ROOT_DIR = ('D:/Re-ID_Dataset/person/Infrared')
 
 
 # -----------------------------------------------------------------------------
