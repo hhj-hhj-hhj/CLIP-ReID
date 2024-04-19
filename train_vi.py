@@ -1,12 +1,12 @@
 from utils.logger import setup_logger
 from datasets.make_dataloader_vi import make_dataloader
-from model.make_model_clipreid import make_model
+from model.make_model_vi import make_model
 from solver.make_optimizer_prompt import make_optimizer_1stage, make_optimizer_2stage
 from solver.scheduler_factory import create_scheduler
 from solver.lr_scheduler import WarmupMultiStepLR
 from loss.make_loss import make_loss
-from processor.processor_clipreid_stage1 import do_train_stage1
-from processor.processor_clipreid_stage2 import do_train_stage2
+from processor.processor_vi_stage1 import do_train_stage1
+from processor.processor_vi_stage2 import do_train_stage2
 import random
 import torch
 import numpy as np
@@ -63,9 +63,10 @@ if __name__ == '__main__':
     if cfg.MODEL.DIST_TRAIN:
         torch.distributed.init_process_group(backend='nccl', init_method='env://')
 
-    train_loader_stage2_rgb, train_loader_stage2_ir, train_loader_stage1_rgb, train_loader_stage1_ir, val_loader, num_query, num_classes_rgb, num_classes_ir, camera_num_rgb, camera_num_ir, view_num_rgb, view_num_ir = make_dataloader(cfg)
+    train_loader_stage2_rgb, train_loader_stage2_ir, train_loader_stage1_rgb, train_loader_stage1_ir, val_loader, num_query, num_classes_rgb, num_classes_ir, camera_num_rgb, camera_num_ir, view_num_rgb, view_num_ir = make_dataloader(
+        cfg)
 
-    model = make_model(cfg, num_class=num_classes_rgb, camera_num=camera_num_rgb + camera_num_ir, view_num = view_num_rgb)
+    model = make_model(cfg, num_class=num_classes_rgb, camera_num=camera_num_rgb, view_num = view_num_rgb)
 
     loss_func, center_criterion = make_loss(cfg, num_classes=num_classes_rgb)
 
@@ -76,7 +77,8 @@ if __name__ == '__main__':
     do_train_stage1(
         cfg,
         model,
-        train_loader_stage1,
+        train_loader_stage1_rgb,
+        train_loader_stage1_ir,
         optimizer_1stage,
         scheduler_1stage,
         args.local_rank
@@ -90,7 +92,8 @@ if __name__ == '__main__':
         cfg,
         model,
         center_criterion,
-        train_loader_stage2,
+        train_loader_stage2_rgb,
+        train_loader_stage2_ir,
         val_loader,
         optimizer_2stage,
         optimizer_center_2stage,
