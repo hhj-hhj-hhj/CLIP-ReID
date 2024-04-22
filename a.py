@@ -41,14 +41,14 @@ if __name__ == "__main__":
                 # image_feature = model(img, target, get_image=True)
                 for i, img_feat, cam_id in zip(target, img, cam):
                     labels.append(i)
-                    image_features.append(img_feat.cpu())
+                    # image_features.append(img_feat.cpu())
                     cams.append(cam_id.cpu())
         labels_list_all = torch.stack(labels, dim=0)  # N
-        image_features_list_all = torch.stack(image_features, dim=0)
+        # image_features_list_all = torch.stack(image_features, dim=0)
         cam_list_all = torch.stack(cams, dim=0)
 
         print('labels_list_all shape is : {}'.format(labels_list_all.shape))
-        print('image_features_list_all shape is : {}'.format(image_features_list_all.shape))
+        # print('image_features_list_all shape is : {}'.format(image_features_list_all.shape))
         print('cam_list_all shape is : {}'.format(cam_list_all.shape))
 
         cam2modal = {
@@ -72,7 +72,7 @@ if __name__ == "__main__":
             b_list_all = iter_list_all[i * batch:num_image_all]
 
         target = labels_list_all[b_list_all]
-        image_features = image_features_list_all[b_list_all]
+        # image_features = image_features_list_all[b_list_all]
         cam = cam_list_all[b_list_all]
 
         # for i,cam_id in enumerate(cam):
@@ -83,10 +83,10 @@ if __name__ == "__main__":
 
     print('cam_modal is : {}'.format(cam_modal.shape))
     print('target is : {}'.format(target.shape))
-    print('image_features is : {}'.format(image_features.shape))
+    # print('image_features is : {}'.format(image_features.shape))
 
     for i in range(len(cam_modal)):
-        print(cam_modal[i], target[i], image_features[i], end = '\n------')
+        print(cam_modal[i], target[i], end = '\n------')
 
 # import torch
 # a = [1,2,3,4]

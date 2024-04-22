@@ -108,7 +108,7 @@ class build_transformer(nn.Module):
         self.prompt_learner = PromptLearner(num_classes, num_classes, clip_model.dtype, clip_model.token_embedding)
         self.text_encoder = TextEncoder(clip_model)
 
-    def forward(self, x=None, label=None, img_modal = 0, get_image=False, get_text=False, cam_label=None, view_label=None):
+    def forward(self, x=None, label=None, img_modal = 1, get_image=False, get_text=False, cam_label=None, view_label=None):
         if get_text == True:
             prompts = self.prompt_learner(label, img_modal)
             text_features = self.text_encoder(prompts, self.prompt_learner.tokenized_prompts)
