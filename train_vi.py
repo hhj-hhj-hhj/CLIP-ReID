@@ -77,7 +77,8 @@ if __name__ == '__main__':
     do_train_stage1(
         cfg,
         model,
-        train_loader_stage1_all,
+        train_loader_stage1_rgb,
+        train_loader_stage1_ir,
         optimizer_1stage,
         scheduler_1stage,
         args.local_rank
