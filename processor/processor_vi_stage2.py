@@ -89,7 +89,10 @@ def do_train_stage2(cfg,
         scheduler.step()
 
         model.train()
-        for n_iter, (img, vid, target_cam, target_view) in enumerate(train_loader_stage2):
+
+        len_rgb = len(train_loader_stage2_rgb)
+        len_ir = len(train_loader_stage2_ir)
+        for n_iter, (img, vid, target_cam, target_view) in enumerate(train_loader_stage2_rgb):
             optimizer.zero_grad()
             optimizer_center.zero_grad()
             img = img.to(device)
@@ -104,7 +107,7 @@ def do_train_stage2(cfg,
                 target_view = None
             with amp.autocast(enabled=True):
                 score, feat, image_features = model(x=img, label=target, cam_label=target_cam, view_label=target_view)
-                logits = image_features @ text_features.t()
+                logits = image_features @ text_features_rgb.t()
                 loss = loss_fn(score, feat, target, target_cam, logits)
 
             scaler.scale(loss).backward()
@@ -126,16 +129,57 @@ def do_train_stage2(cfg,
             torch.cuda.synchronize()
             if (n_iter + 1) % log_period == 0:
                 logger.info("Epoch[{}] Iteration[{}/{}] Loss: {:.3f}, Acc: {:.3f}, Base Lr: {:.2e}"
-                            .format(epoch, (n_iter + 1), len(train_loader_stage2),
+                            .format(epoch, (n_iter + 1), len_rgb + len_ir,
+                                    loss_meter.avg, acc_meter.avg, scheduler.get_lr()[0]))
+
+
+        for n_iter, (img, vid, target_cam, target_view) in enumerate(train_loader_stage2_ir):
+            optimizer.zero_grad()
+            optimizer_center.zero_grad()
+            img = img.to(device)
+            target = vid.to(device)
+            if cfg.MODEL.SIE_CAMERA:
+                target_cam = target_cam.to(device)
+            else:
+                target_cam = None
+            if cfg.MODEL.SIE_VIEW:
+                target_view = target_view.to(device)
+            else:
+                target_view = None
+            with amp.autocast(enabled=True):
+                score, feat, image_features = model(x=img, label=target, cam_label=target_cam, view_label=target_view)
+                logits = image_features @ text_features_ir.t()
+                loss = loss_fn(score, feat, target, target_cam, logits)
+
+            scaler.scale(loss).backward()
+
+            scaler.step(optimizer)
+            scaler.update()
+
+            if 'center' in cfg.MODEL.METRIC_LOSS_TYPE:
+                for param in center_criterion.parameters():
+                    param.grad.data *= (1. / cfg.SOLVER.CENTER_LOSS_WEIGHT)
+                scaler.step(optimizer_center)
+                scaler.update()
+
+            acc = (logits.max(1)[1] == target).float().mean()
+
+            loss_meter.update(loss.item(), img.shape[0])
+            acc_meter.update(acc, 1)
+
+            torch.cuda.synchronize()
+            if (n_iter + 1) % log_period == 0:
+                logger.info("Epoch[{}] Iteration[{}/{}] Loss: {:.3f}, Acc: {:.3f}, Base Lr: {:.2e}"
+                            .format(epoch, (n_iter + 1 + len_rgb), len_rgb + len_ir,
                                     loss_meter.avg, acc_meter.avg, scheduler.get_lr()[0]))
 
         end_time = time.time()
-        time_per_batch = (end_time - start_time) / (n_iter + 1)
+        time_per_batch = (end_time - start_time) / (len_rgb + len_ir)
         if cfg.MODEL.DIST_TRAIN:
             pass
         else:
             logger.info("Epoch {} done. Time per batch: {:.3f}[s] Speed: {:.1f}[samples/s]"
-                        .format(epoch, time_per_batch, train_loader_stage2.batch_size / time_per_batch))
+                        .format(epoch, time_per_batch, train_loader_stage2_rgb.batch_size / time_per_batch))
 
         if epoch % checkpoint_period == 0:
             if cfg.MODEL.DIST_TRAIN:
