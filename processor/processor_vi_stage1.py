@@ -117,10 +117,8 @@ def do_train_stage1(cfg,
                 b_list_rgb = iter_list_rgb[i * batch:len(iter_list_rgb)]
                 b_list_ir = iter_list_ir[i * batch:len(iter_list_rgb)]
 
-
             target_rgb = labels_list_rgb[b_list_rgb]
             target_ir = labels_list_ir[b_list_ir]
-
 
             image_features_rgb = image_features_list_rgb[b_list_rgb]
             image_features_ir = image_features_list_ir[b_list_ir]
@@ -131,13 +129,11 @@ def do_train_stage1(cfg,
                 text_features_rgb = model(label=target_rgb,img_modal = 1, get_text=True)
                 text_features_ir = model(label=target_ir,img_modal = 0, get_text=True)
 
-
             loss_i2t_rgb = xent(image_features_rgb, text_features_rgb, target_rgb, target_rgb)
             loss_t2i_rgb = xent(text_features_rgb, image_features_rgb, target_rgb, target_rgb)
 
             loss_i2t_ir = xent(image_features_ir, text_features_ir, target_ir, target_ir)
             loss_t2i_ir = xent(text_features_ir, image_features_ir, target_ir, target_ir)
-
 
             loss = loss_i2t_rgb + loss_t2i_rgb + loss_i2t_ir + loss_t2i_ir
 
@@ -155,13 +151,6 @@ def do_train_stage1(cfg,
                                     loss_meter.avg, scheduler._get_lr(epoch)[0]))
 
         if epoch % checkpoint_period == 0:
-
-            # 测试开始
-            print(f'Test Epoch : {epoch}')
-
-
-
-
             if cfg.MODEL.DIST_TRAIN:
                 if dist.get_rank() == 0:
                     torch.save(model.state_dict(),
