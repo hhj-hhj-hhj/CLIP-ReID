@@ -14,7 +14,8 @@ from loss.supcontrast import SupConLoss
 def do_train_stage2(cfg,
                     model,
                     center_criterion,
-                    train_loader_stage2,
+                    train_loader_stage2_rgb,
+                    train_loader_stage2_ir,
                     val_loader,
                     optimizer,
                     optimizer_center,
@@ -56,10 +57,14 @@ def do_train_stage2(cfg,
     # train
     batch = cfg.SOLVER.STAGE2.IMS_PER_BATCH
     i_ter = num_classes // batch
+
     left = num_classes - batch * (num_classes // batch)
+
+
     if left != 0:
         i_ter = i_ter + 1
-    text_features = []
+    text_features_rgb = []
+    text_features_ir = []
     with torch.no_grad():
         for i in range(i_ter):
             if i + 1 != i_ter:
@@ -67,9 +72,13 @@ def do_train_stage2(cfg,
             else:
                 l_list = torch.arange(i * batch, num_classes)
             with amp.autocast(enabled=True):
-                text_feature = model(label=l_list, get_text=True)
-            text_features.append(text_feature.cpu())
-        text_features = torch.cat(text_features, 0).cuda()
+                text_feature_rgb = model(label=l_list, img_modal = 1, get_text=True)
+                text_feature_ir = model(label=l_list, img_modal = 0, get_text=True)
+
+            text_features_rgb.append(text_feature_rgb.cpu())
+            text_features_ir.append(text_feature_ir.cpu())
+        text_features_rgb = torch.cat(text_features_rgb, 0).cuda()
+        text_features_ir = torch.cat(text_features_ir, 0).cuda()
 
     for epoch in range(1, epochs + 1):
         start_time = time.time()
