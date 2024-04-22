@@ -73,14 +73,23 @@ def make_dataloader(cfg):
     # view_num = dataset.num_train_vids
     train_set_rgb = ImageDataset(dataset.train_rgb, train_transforms)
     train_set_ir = ImageDataset(dataset.train_ir, train_transforms)
+    train_set_all = ImageDataset(dataset.train_all, train_transforms)
+
     train_set_normal_rgb = ImageDataset(dataset.train_rgb, val_transforms)
     train_set_normal_ir = ImageDataset(dataset.train_ir, val_transforms)
+    train_set_normal_all = ImageDataset(dataset.train_all, val_transforms)
+
     num_classes_rgb = dataset.num_train_rgb_pids
     num_classes_ir = dataset.num_train_ir_pids
+    num_classes_all = dataset.num_train_all_pids
+
     cam_num_rgb = dataset.num_train_rgb_cams
     cam_num_ir = dataset.num_train_ir_cams
+    cam_num_all = dataset.num_train_all_cams
+
     view_num_rgb = dataset.num_train_rgb_vids
     view_num_ir = dataset.num_train_ir_vids
+    view_num_all = dataset.num_train_all_vids
 
     if 'triplet' in cfg.DATALOADER.SAMPLER:
         if cfg.MODEL.DIST_TRAIN:
@@ -90,8 +99,13 @@ def make_dataloader(cfg):
                                                      cfg.DATALOADER.NUM_INSTANCE)
             data_sampler_ir = RandomIdentitySampler_DDP(dataset.train_ir, cfg.SOLVER.STAGE2.IMS_PER_BATCH,
                                                         cfg.DATALOADER.NUM_INSTANCE)
+            data_sampler_all = RandomIdentitySampler_DDP(dataset.train_all, cfg.SOLVER.STAGE2.IMS_PER_BATCH,
+                                                        cfg.DATALOADER.NUM_INSTANCE)
+
             batch_sampler_rgb = torch.utils.data.sampler.BatchSampler(data_sampler_rgb, mini_batch_size, True)
             batch_sampler_ir = torch.utils.data.sampler.BatchSampler(data_sampler_ir, mini_batch_size, True)
+            batch_sampler_all = torch.utils.data.sampler.BatchSampler(data_sampler_all, mini_batch_size, True)
+
             train_loader_stage2_rgb = torch.utils.data.DataLoader(
                 train_set_rgb,
                 num_workers=num_workers,
@@ -103,6 +117,13 @@ def make_dataloader(cfg):
                 train_set_ir,
                 num_workers=num_workers,
                 batch_sampler=batch_sampler_ir,
+                collate_fn=train_collate_fn,
+                pin_memory=True,
+            )
+            train_loader_stage2_all = torch.utils.data.DataLoader(
+                train_set_all,
+                num_workers=num_workers,
+                batch_sampler=batch_sampler_all,
                 collate_fn=train_collate_fn,
                 pin_memory=True,
             )
@@ -119,6 +140,12 @@ def make_dataloader(cfg):
                                               cfg.DATALOADER.NUM_INSTANCE),
                 num_workers=num_workers, collate_fn=train_collate_fn
             )
+            train_loader_stage2_all = DataLoader(
+                train_set_all, batch_size=cfg.SOLVER.STAGE2.IMS_PER_BATCH,
+                sampler=RandomIdentitySampler(dataset.train_all, cfg.SOLVER.STAGE2.IMS_PER_BATCH,
+                                              cfg.DATALOADER.NUM_INSTANCE),
+                num_workers=num_workers, collate_fn=train_collate_fn
+            )
     elif cfg.DATALOADER.SAMPLER == 'softmax':
         print('using softmax sampler')
         train_loader_stage2_rgb = DataLoader(
@@ -127,6 +154,10 @@ def make_dataloader(cfg):
         )
         train_loader_stage2_ir = DataLoader(
             train_set_ir, batch_size=cfg.SOLVER.STAGE2.IMS_PER_BATCH, shuffle=True, num_workers=num_workers,
+            collate_fn=train_collate_fn
+        )
+        train_loader_stage2_all = DataLoader(
+            train_set_all, batch_size=cfg.SOLVER.STAGE2.IMS_PER_BATCH, shuffle=True, num_workers=num_workers,
             collate_fn=train_collate_fn
         )
     else:
@@ -146,4 +177,8 @@ def make_dataloader(cfg):
         train_set_normal_ir, batch_size=cfg.SOLVER.STAGE1.IMS_PER_BATCH, shuffle=True, num_workers=num_workers,
         collate_fn=train_collate_fn
     )
-    return train_loader_stage2_rgb, train_loader_stage2_ir, train_loader_stage1_rgb, train_loader_stage1_ir, val_loader, len(dataset.query), num_classes_rgb, num_classes_ir, cam_num_rgb, cam_num_ir, view_num_rgb, view_num_ir
+    train_loader_stage1_all = DataLoader(
+        train_set_normal_all, batch_size=cfg.SOLVER.STAGE1.IMS_PER_BATCH, shuffle=True, num_workers=num_workers,
+        collate_fn=train_collate_fn
+    )
+    return train_loader_stage2_all, train_loader_stage2_rgb, train_loader_stage2_ir, train_loader_stage1_all, train_loader_stage1_rgb, train_loader_stage1_ir, val_loader, len(dataset.query), num_classes_all, num_classes_rgb, num_classes_ir, cam_num_all, cam_num_rgb, cam_num_ir, view_num_all, view_num_rgb, view_num_ir

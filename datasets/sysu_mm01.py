@@ -19,6 +19,7 @@ class SYSUMM01(BaseImageDataset):
         gallery = self._process_galler(self.dataset_dir)
         query = self._process_query(self.dataset_dir)
         train_rgb, train_ir = self._process_train(self.dataset_dir)
+        train_all = train_rgb + train_ir
 
 
 
@@ -31,11 +32,13 @@ class SYSUMM01(BaseImageDataset):
         self.query = query
         self.train_rgb = train_rgb
         self.train_ir = train_ir
+        self.train_all = train_all
 
         self.num_gallery_pids, self.num_gallery_imgs, self.num_gallery_cams, self.num_gallery_vids = self.get_imagedata_info(self.gallery)
         self.num_query_pids, self.num_query_imgs, self.num_query_cams, self.num_query_vids = self.get_imagedata_info(self.query)
         self.num_train_rgb_pids, self.num_train_rgb_imgs, self.num_train_rgb_cams, self.num_train_rgb_vids = self.get_imagedata_info(self.train_rgb)
         self.num_train_ir_pids, self.num_train_ir_imgs, self.num_train_ir_cams, self.num_train_ir_vids = self.get_imagedata_info(self.train_ir)
+        self.num_train_all_pids, self.num_train_all_imgs, self.num_train_all_cams, self.num_train_all_vids = self.get_imagedata_info(self.train_all)
 
     def _check_before_run(self):
         if not osp.exists(self.dataset_dir):

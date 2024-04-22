@@ -63,12 +63,12 @@ if __name__ == '__main__':
     if cfg.MODEL.DIST_TRAIN:
         torch.distributed.init_process_group(backend='nccl', init_method='env://')
 
-    train_loader_stage2_rgb, train_loader_stage2_ir, train_loader_stage1_rgb, train_loader_stage1_ir, val_loader, num_query, num_classes_rgb, num_classes_ir, camera_num_rgb, camera_num_ir, view_num_rgb, view_num_ir = make_dataloader(
+    train_loader_stage2_all, train_loader_stage2_rgb, train_loader_stage2_ir, train_loader_stage1_all, train_loader_stage1_rgb, train_loader_stage1_ir, val_loader, num_query, num_classes_all, num_classes_rgb, num_classes_ir, camera_num_all, camera_num_rgb, camera_num_ir, view_num_all, view_num_rgb, view_num_ir = make_dataloader(
         cfg)
 
-    model = make_model(cfg, num_class=num_classes_rgb, camera_num=camera_num_rgb, view_num = view_num_rgb)
+    model = make_model(cfg, num_class=num_classes_all, camera_num=camera_num_all, view_num = view_num_all)
 
-    loss_func, center_criterion = make_loss(cfg, num_classes=num_classes_rgb)
+    loss_func, center_criterion = make_loss(cfg, num_classes=num_classes_all)
 
     optimizer_1stage = make_optimizer_1stage(cfg, model)
     scheduler_1stage = create_scheduler(optimizer_1stage, num_epochs = cfg.SOLVER.STAGE1.MAX_EPOCHS, lr_min = cfg.SOLVER.STAGE1.LR_MIN, \
@@ -77,8 +77,7 @@ if __name__ == '__main__':
     do_train_stage1(
         cfg,
         model,
-        train_loader_stage1_rgb,
-        train_loader_stage1_ir,
+        train_loader_stage1_all,
         optimizer_1stage,
         scheduler_1stage,
         args.local_rank

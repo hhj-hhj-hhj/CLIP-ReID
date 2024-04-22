@@ -235,7 +235,7 @@ class PromptLearner(nn.Module):
         self.num_class_ir = num_class_ir
         self.n_cls_ctx = n_cls_ctx
 
-    def forward(self, label, img_modal=0):
+    def forward(self, label, img_modal = 1):
         if img_modal == 1:
             cls_ctx_rgb = self.cls_ctx_rgb[label]
             b = label.shape[0]
@@ -251,7 +251,7 @@ class PromptLearner(nn.Module):
                 dim=1,
             )
             return  prompts
-        elif img_modal == 2:
+        elif img_modal == 0:
             cls_ctx_ir = self.cls_ctx_ir[label]
             b = label.shape[0]
             prefix_ir = self.token_prefix_ir.expand(b, -1, -1)
