@@ -25,6 +25,7 @@ def set_seed(seed):
 
 if __name__ == '__main__':
 
+    print('开始加载配置文件')
     parser = argparse.ArgumentParser(description="ReID Baseline Training")
     parser.add_argument(
         "--config_file", default="configs/person/vit_clipreid.yml", help="path to config file", type=str
@@ -63,8 +64,12 @@ if __name__ == '__main__':
     if cfg.MODEL.DIST_TRAIN:
         torch.distributed.init_process_group(backend='nccl', init_method='env://')
 
+    print('开始加载数据集')
+
     train_loader_stage2_all, train_loader_stage2_rgb, train_loader_stage2_ir, train_loader_stage1_all, train_loader_stage1_rgb, train_loader_stage1_ir, val_loader, num_query, num_classes_all, num_classes_rgb, num_classes_ir, camera_num_all, camera_num_rgb, camera_num_ir, view_num_all, view_num_rgb, view_num_ir = make_dataloader(
         cfg)
+
+    print('数据集加载完成,开始构建模型')
 
     model = make_model(cfg, num_class=num_classes_all, camera_num=camera_num_all, view_num = view_num_all)
 
@@ -73,6 +78,8 @@ if __name__ == '__main__':
     optimizer_1stage = make_optimizer_1stage(cfg, model)
     scheduler_1stage = create_scheduler(optimizer_1stage, num_epochs = cfg.SOLVER.STAGE1.MAX_EPOCHS, lr_min = cfg.SOLVER.STAGE1.LR_MIN, \
                         warmup_lr_init = cfg.SOLVER.STAGE1.WARMUP_LR_INIT, warmup_t = cfg.SOLVER.STAGE1.WARMUP_EPOCHS, noise_range = None)
+
+    print('开始一阶段的训练')
 
     do_train_stage1(
         cfg,

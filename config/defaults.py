@@ -235,3 +235,10 @@ _C.TEST.EVAL = False
 # ---------------------------------------------------------------------------- #
 # Path to checkpoint and saved log of trained model
 _C.OUTPUT_DIR = ""
+
+
+# 以下为手动添加的配置
+_C.config_file = "configs/person/vit_clipreid.yml"
+# _C.MODEL.SIE_CAMERA = True
+# _C.MODEL.SIE_COE = 1.0
+# _C.MODEL.STRIDE_SIZE = [12, 12]
