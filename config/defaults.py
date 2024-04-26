@@ -235,7 +235,7 @@ _C.TEST.EVAL = False
 # ---------------------------------------------------------------------------- #
 # Path to checkpoint and saved log of trained model
 # _C.OUTPUT_DIR = "D:/hhj"
-_C.OUTPUT_DIR = "D:\\Re-ID_Dataset\\person\\Infrared"
+_C.OUTPUT_DIR = "output"
 
 
 # 以下为手动添加的配置
