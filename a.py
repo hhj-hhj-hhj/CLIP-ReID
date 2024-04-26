@@ -88,6 +88,8 @@ if __name__ == "__main__":
     for i in range(len(cam_modal)):
         print(cam_modal[i], target[i], end = '\n------')
 
+
+
 # import torch
 # a = [1,2,3,4]
 # b = torch.stack(a, dim=0)

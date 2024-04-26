@@ -111,7 +111,10 @@ class build_transformer(nn.Module):
     def forward(self, x=None, label=None, img_modal = 1, get_image=False, get_text=False, cam_label=None, view_label=None):
         if get_text == True:
             prompts = self.prompt_learner(label, img_modal)
-            text_features = self.text_encoder(prompts, self.prompt_learner.tokenized_prompts)
+            if img_modal == 1:
+                text_features = self.text_encoder(prompts, self.prompt_learner.tokenized_prompts_rgb)
+            else:
+                text_features = self.text_encoder(prompts, self.prompt_learner.tokenized_prompts_ir)
             return text_features
 
         if get_image == True:
@@ -208,8 +211,8 @@ class PromptLearner(nn.Module):
         ctx_init_ir = ctx_init_ir.replace("_", " ")
         n_ctx = 5
 
-        tokenized_prompts_rgb = clip.tokenize(ctx_init_rgb)
-        tokenized_prompts_ir = clip.tokenize(ctx_init_ir)
+        tokenized_prompts_rgb = clip.tokenize(ctx_init_rgb).cuda()
+        tokenized_prompts_ir = clip.tokenize(ctx_init_ir).cuda()
         with torch.no_grad():
             embedding_rgb = token_embedding(tokenized_prompts_rgb).type(dtype)
             embedding_ir = token_embedding(tokenized_prompts_ir).type(dtype)

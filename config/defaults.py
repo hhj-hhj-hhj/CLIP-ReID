@@ -234,7 +234,8 @@ _C.TEST.EVAL = False
 # Misc options
 # ---------------------------------------------------------------------------- #
 # Path to checkpoint and saved log of trained model
-_C.OUTPUT_DIR = ""
+# _C.OUTPUT_DIR = "D:/hhj"
+_C.OUTPUT_DIR = "D:\\Re-ID_Dataset\\person\\Infrared"
 
 
 # 以下为手动添加的配置
@@ -242,3 +243,4 @@ _C.config_file = "configs/person/vit_clipreid.yml"
 # _C.MODEL.SIE_CAMERA = True
 # _C.MODEL.SIE_COE = 1.0
 # _C.MODEL.STRIDE_SIZE = [12, 12]
+# _C.TEST.WEIGHT = "D:/hhj/ViT-B-16_60_VI.pth"

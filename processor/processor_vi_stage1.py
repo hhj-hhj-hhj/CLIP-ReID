@@ -22,7 +22,7 @@ def do_train_stage1(cfg,
     epochs = cfg.SOLVER.STAGE1.MAX_EPOCHS
     log_period = cfg.SOLVER.STAGE1.LOG_PERIOD
 
-    logger = logging.getLogger("transreid.train")
+    logger = logging.getLogger("transreid_VI.train")
     logger.info('start training')
     _LOCAL_PROCESS_GROUP = None
     if device:
@@ -40,6 +40,7 @@ def do_train_stage1(cfg,
     from datetime import timedelta
     all_start_time = time.monotonic()
     logger.info("model: {}".format(model))
+
     image_features = []
     labels = []
     with torch.no_grad():
@@ -154,10 +155,10 @@ def do_train_stage1(cfg,
             if cfg.MODEL.DIST_TRAIN:
                 if dist.get_rank() == 0:
                     torch.save(model.state_dict(),
-                               os.path.join(cfg.OUTPUT_DIR, cfg.MODEL.NAME + '_stage1_{}.pth'.format(epoch)))
+                               os.path.join(cfg.OUTPUT_DIR, cfg.MODEL.NAME + '_stage1_{}_VI.pth'.format(epoch)))
             else:
                 torch.save(model.state_dict(),
-                           os.path.join(cfg.OUTPUT_DIR, cfg.MODEL.NAME + '_stage1_{}.pth'.format(epoch)))
+                           os.path.join(cfg.OUTPUT_DIR, cfg.MODEL.NAME + '_stage1_{}_VI.pth'.format(epoch)))
 
     all_end_time = time.monotonic()
     total_time = timedelta(seconds=all_end_time - all_start_time)

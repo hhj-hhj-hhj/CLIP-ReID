@@ -8,7 +8,7 @@ from datasets.bases import ImageDataset
 from config import cfg
 
 from timm.data.random_erasing import RandomErasing
-from torch.utils.tensorboard import SummaryWriter
+# from torch.utils.tensorboard import SummaryWriter
 import torchvision.transforms.functional as TF
 
 dataset = SYSUMM01(root=r'D:\Re-ID_Dataset\person\Infrared')
