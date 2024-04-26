@@ -5,7 +5,6 @@ from datasets.make_dataloader_vi import make_dataloader
 from model.make_model_vi import make_model
 from processor.processor_clipreid_stage2 import do_inference
 from utils.logger import setup_logger
-from my_test import do_my_inference
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ReID Baseline Training")
