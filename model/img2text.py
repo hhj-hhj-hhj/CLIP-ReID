@@ -32,3 +32,4 @@ def get_text_features(model, token_feature, clip_model, dtype):
         text_embedding = clip_model.token_embedding(text).type(dtype)
     prompts = torch.cat((text_embedding[:, :-1, :], token_feature), dim=1)
     text_features = model.text_encoder(prompts, text_tokenize)
+    return text_features
