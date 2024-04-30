@@ -9,7 +9,7 @@ from torch.cuda import amp
 import torch.distributed as dist
 from torch.nn import functional as F
 from loss.supcontrast import SupConLoss
-from model.img2text import get_text_features, get_loss_img2text
+from model.img2text import get_text_features, get_loss_img2text, get_loss
 from model.make_model_vi import load_clip_to_cpu
 
 
