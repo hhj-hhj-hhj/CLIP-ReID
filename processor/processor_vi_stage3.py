@@ -9,8 +9,9 @@ from torch.cuda import amp
 import torch.distributed as dist
 from torch.nn import functional as F
 from loss.supcontrast import SupConLoss
-from model.img2text import get_text_features
+from model.img2text import get_text_features, get_loss_img2text
 from model.make_model_vi import load_clip_to_cpu
+
 
 def do_train_stage3(cfg,
                     model,
@@ -91,12 +92,5 @@ def do_train_stage3(cfg,
                 pass
 
 
-def get_loss_img2text(model, img2text, images, loss_img, loss_txt, clip_model):
-    with torch.no_grad():
-        image_features = model(img=images, get_image=True)
-    token_features = img2text(image_features)
-    text_features = get_text_features(model, token_features, clip_model, dtype=clip_model.dtype)
 
-    image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-    text_features = text_features / text_features.norm(dim=-1, keepdim=True)
 
