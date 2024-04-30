@@ -48,11 +48,11 @@ def get_loss_img2text(model, img2text, images, loss_img, loss_txt, clip_model):
     text_features = text_features / text_features.norm(dim=-1, keepdim=True)
 
     logit_scale = clip_model.logit_scale.exp()
-    logits_per_image = logit_scale.mean()
+    logit_scale = logit_scale.mean()
 
     # 这是不使用分布式的代码
     ground_truth = torch.arange(len(image_features)).long()
-    ground_truth.cuda(device, non_blocking=True)
+    ground_truth = ground_truth.cuda(device, non_blocking=True)
 
     # Image loss.
     logits_per_image = logit_scale * image_features @ text_features.t()

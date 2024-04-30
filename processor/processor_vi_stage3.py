@@ -29,6 +29,7 @@ def do_train_stage3(cfg,
     instance = cfg.DATALOADER.NUM_INSTANCE
 
     device = "cuda"
+    model.eval()
     epochs = cfg.SOLVER.STAGE3.MAX_EPOCHS
 
     logger = logging.getLogger("transreid_VI.train")
@@ -53,6 +54,9 @@ def do_train_stage3(cfg,
     loss_img = nn.CrossEntropyLoss()
     loss_txt = nn.CrossEntropyLoss()
 
+    loss_img.to(device)
+    loss_txt.to(device)
+
     clip_model = load_clip_to_cpu(model.model_name, model.h_resolution, model.w_resolution, model.vision_stride_size)
     clip_model.to("cuda")
 
@@ -71,7 +75,6 @@ def do_train_stage3(cfg,
 
         scheduler.step()
 
-        model.train()
 
         for n_iter, (img, vid, target_cam, target_view) in enumerate(train_loader_stage2_all):
             img = img.to(device)
