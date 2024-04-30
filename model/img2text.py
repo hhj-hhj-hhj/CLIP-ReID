@@ -24,8 +24,10 @@ class IMG2TEXT(nn.Module):
         return self.fc_out(x)
 
 def get_text_features(model, token_feature, clip_model, dtype):
+    device = 'cuda'
     b = token_feature.size(0)
     text_tokenize = clip.tokenize('A photo of X')
+    text_tokenize = text_tokenize.cuda(device, non_blocking=True)
     text = text_tokenize.view(1, -1)
     text = text.repeat(token_feature.size(0), 1)
     with torch.no_grad():
@@ -50,7 +52,7 @@ def get_loss_img2text(model, img2text, images, loss_img, loss_txt, clip_model):
 
     # 这是不使用分布式的代码
     ground_truth = torch.arange(len(image_features)).long()
-    ground_truth.to(device)
+    ground_truth.cuda(device, non_blocking=True)
 
     # Image loss.
     logits_per_image = logit_scale * image_features @ text_features.t()

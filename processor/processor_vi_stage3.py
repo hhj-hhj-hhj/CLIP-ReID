@@ -42,6 +42,7 @@ def do_train_stage3(cfg,
             num_classes = model.module.num_classes
         else:
             num_classes = model.num_classes
+
     loss_meter = AverageMeter()
     acc_meter = AverageMeter()
 
