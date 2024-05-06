@@ -64,7 +64,6 @@ def do_train_stage3(cfg,
     clip_model.to("cuda")
 
     # train
-    import time
     from datetime import timedelta
     all_start_time = time.monotonic()
 
