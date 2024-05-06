@@ -1,9 +1,10 @@
 from utils.logger import setup_logger
 from datasets.make_dataloader_vi import make_dataloader
 from model.make_model_vi import make_model
-from solver.make_optimizer_prompt import make_optimizer_1stage, make_optimizer_2stage
+from solver.make_optimizer_prompt import make_optimizer_1stage, make_optimizer_2stage, make_optimizer_3stage
 from solver.scheduler_factory import create_scheduler
 from solver.lr_scheduler import WarmupMultiStepLR
+from solver.scheduler_vi import cosine_lr
 from loss.make_loss import make_loss
 from processor.processor_vi_stage1 import do_train_stage1
 from processor.processor_vi_stage2 import do_train_stage2
@@ -110,3 +111,6 @@ if __name__ == '__main__':
         loss_func,
         num_query, args.local_rank
     )
+    optimizer_3stage, optimizer_center_3stage = make_optimizer_3stage(cfg, model, center_criterion)
+    scheduler_3stage = cosine_lr(optimizer_3stage, cfg.SOLVER.STAGE3.MAX_EPOCHS, cfg.SOLVER.STAGE3.BASE_LR, cfg.SOLVER.STAGE3.WARMUP_EPOCHS)
+

@@ -1,5 +1,5 @@
 import torch
-
+from torch import optim
 
 def make_optimizer_1stage(cfg, model):
     params = []
@@ -53,3 +53,21 @@ def make_optimizer_2stage(cfg, model, center_criterion):
     optimizer_center = torch.optim.SGD(center_criterion.parameters(), lr=cfg.SOLVER.STAGE2.CENTER_LR)
 
     return optimizer, optimizer_center
+
+def make_optimizer_3stage(cfg, img2text):
+    exclude = lambda n: "bn" in n or "ln" in n or "bias" in n or 'logit_scale' in n
+    include = lambda n: not exclude(n)
+    named_parameters = list(img2text.named_parameters())
+    gain_or_bias_params = [p for n, p in named_parameters if exclude(n) and p.requires_grad]
+    rest_params = [p for n, p in named_parameters if include(n) and p.requires_grad]
+
+    optimizer = optim.AdamW(
+        [
+            {"params": gain_or_bias_params, "weight_decay": 0.},
+            {"params": rest_params, "weight_decay": cfg.wd},
+        ],
+        lr=cfg.lr,
+        betas=(cfg.beta1, cfg.beta2),
+        eps=cfg.eps,
+    )
+    return optimizer
