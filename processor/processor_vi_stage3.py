@@ -30,6 +30,7 @@ def do_train_stage3(cfg,
 
     device = "cuda"
     model.eval()
+    img2text.train()
     epochs = cfg.SOLVER.STAGE3.MAX_EPOCHS
 
     logger = logging.getLogger("transreid_VI.train")
@@ -37,9 +38,11 @@ def do_train_stage3(cfg,
     _LOCAL_PROCESS_GROUP = None
     if device:
         model.to(local_rank)
+        img2text.to(local_rank)
         if torch.cuda.device_count() > 1:
             print('Using {} GPUs for training'.format(torch.cuda.device_count()))
             model = nn.DataParallel(model)
+            img2text = nn.DataParallel(img2text)
         #     num_classes = model.module.num_classes
         # else:
         #     num_classes = model.num_classes
@@ -116,11 +119,11 @@ def do_train_stage3(cfg,
         if epoch % checkpoint_period == 0:
             if cfg.MODEL.DIST_TRAIN:
                 if dist.get_rank() == 0:
-                    torch.save(model.state_dict(),
-                               os.path.join(cfg.OUTPUT_DIR, cfg.MODEL.NAME + '_stage3_{}_VI.pth'.format(epoch)))
+                    torch.save(img2text.state_dict(),
+                               os.path.join(cfg.OUTPUT_DIR, cfg.MODEL.NAME + '_img2text_{}_VI.pth'.format(epoch)))
             else:
-                torch.save(model.state_dict(),
-                           os.path.join(cfg.OUTPUT_DIR, cfg.MODEL.NAME + '_stage3_{}_VI.pth'.format(epoch)))
+                torch.save(img2text.state_dict(),
+                           os.path.join(cfg.OUTPUT_DIR, cfg.MODEL.NAME + '_img2text_{}_VI.pth'.format(epoch)))
 
             # batch_time = time.time() - start_time
             #
