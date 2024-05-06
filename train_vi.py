@@ -37,6 +37,15 @@ if __name__ == '__main__':
     parser.add_argument("opts", help="Modify config options using the command-line", default=None,
                         nargs=argparse.REMAINDER)
     parser.add_argument("--local_rank", default=0, type=int)
+    # 第三阶段所需参数
+    parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate.")
+    # parser.add_argument("--beta1", type=float, default=None, help="Adam beta 1.")
+    # parser.add_argument("--beta2", type=float, default=None, help="Adam beta 2.")
+    # parser.add_argument("--eps", type=float, default=None, help="Adam epsilon.")
+    parser.add_argument("--wd", type=float, default=0.2, help="Weight decay.")
+    parser.add_argument("--warmup", type=int, default=10000, help="Number of steps to warmup for.")
+
+    # 结束第三阶段所需参数
     args = parser.parse_args()
 
     if args.config_file != "":

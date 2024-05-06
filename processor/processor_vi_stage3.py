@@ -40,9 +40,9 @@ def do_train_stage3(cfg,
         if torch.cuda.device_count() > 1:
             print('Using {} GPUs for training'.format(torch.cuda.device_count()))
             model = nn.DataParallel(model)
-            num_classes = model.module.num_classes
-        else:
-            num_classes = model.num_classes
+        #     num_classes = model.module.num_classes
+        # else:
+        #     num_classes = model.num_classes
 
     loss_meter = AverageMeter()
     acc_meter = AverageMeter()
@@ -67,33 +67,71 @@ def do_train_stage3(cfg,
 
     batch = cfg.SOLVER.STAGE3.IMS_PER_BATCH
 
+    num_batches_per_epoch = len(train_loader_stage2_all)
+
     for epoch in range(1, epochs + 1):
         start_time = time.time()
         loss_meter.reset()
-        acc_meter.reset()
         # evaluator.reset()
 
-        scheduler.step()
-
+        # scheduler.step()
 
         for n_iter, (img, vid, target_cam, target_view) in enumerate(train_loader_stage2_all):
-            img = img.to(device)
-            target = vid.to(device)
-            target_cam = target_cam.to(device)
-            target_view = target_view.to(device)
+            # img = img.to(device)
+            # target = vid.to(device)
+            # target_cam = target_cam.to(device)
+            # target_view = target_view.to(device)
 
-            if cfg.MODEL.SIE_CAMERA:
-                target_cam = target_cam.to(device)
-            else:
-                target_cam = None
-            if cfg.MODEL.SIE_VIEW:
-                target_view = target_view.to(device)
-            else:
-                target_view = None
+            # data_time = time.time() - start_time
+
+            step = epoch * num_batches_per_epoch + n_iter
+            scheduler(step)
+            optimizer.zero_grad()
+
+            img = img.cuda(device, non_blocking=True)
+
             with amp.autocast(enabled=True):
-                score, feat, image_features = model(x=img, label=target, cam_label=target_cam, view_label=target_view)
-                loss = get_loss_img2text(model, img2text, image_features, loss_img, loss_txt)
-                pass
+                total_loss = get_loss_img2text(model, img2text, img, loss_img, loss_txt, clip_model)
+                scaler.scale(total_loss).backward()
+                scaler.step(optimizer)
+            scaler.update()
+
+            if (n_iter + 1) % log_period == 0:
+                loss_meter.update(total_loss.item())
+                logger.info(
+                    "Epoch[{}] Iteration[{}/{}] Loss: {:.6f} Base Lr: {:.2e}".format(epoch, n_iter + 1,
+                                                                                    num_batches_per_epoch,
+                                                                                    total_loss.item(),
+                                                                                    optimizer.param_groups[0]['lr'])
+                )
+        end_time = time.time()
+        time_per_batch = (end_time - start_time) / num_batches_per_epoch
+
+        if cfg.MODEL.DIST_TRAIN:
+            pass
+        else:
+            logger.info("Epoch {} done. Time per batch: {:.3f}[s] Speed: {:.1f}[samples/s]"
+                        .format(epoch, time_per_batch, train_loader_stage2_all.batch_size / time_per_batch))
+
+        if epoch % checkpoint_period == 0:
+            if cfg.MODEL.DIST_TRAIN:
+                if dist.get_rank() == 0:
+                    torch.save(model.state_dict(),
+                               os.path.join(cfg.OUTPUT_DIR, cfg.MODEL.NAME + '_stage3_{}_VI.pth'.format(epoch)))
+            else:
+                torch.save(model.state_dict(),
+                           os.path.join(cfg.OUTPUT_DIR, cfg.MODEL.NAME + '_stage3_{}_VI.pth'.format(epoch)))
+
+            # batch_time = time.time() - start_time
+            #
+            # timestep = epoch * num_batches_per_epoch + n_iter
+            # log_data = {
+            #     "loss": total_loss.item(),
+            #     "data_time": data_time,
+            #     "batch_time": batch_time,
+            #     "lr": optimizer.param_groups[0]["lr"]
+            # }
+
 
 
 
