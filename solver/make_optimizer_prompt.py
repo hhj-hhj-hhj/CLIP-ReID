@@ -54,7 +54,7 @@ def make_optimizer_2stage(cfg, model, center_criterion):
 
     return optimizer, optimizer_center
 
-def make_optimizer_3stage(cfg, img2text):
+def make_optimizer_3stage(args, img2text):
     exclude = lambda n: "bn" in n or "ln" in n or "bias" in n or 'logit_scale' in n
     include = lambda n: not exclude(n)
     named_parameters = list(img2text.named_parameters())
@@ -64,10 +64,10 @@ def make_optimizer_3stage(cfg, img2text):
     optimizer = optim.AdamW(
         [
             {"params": gain_or_bias_params, "weight_decay": 0.},
-            {"params": rest_params, "weight_decay": cfg.wd},
+            {"params": rest_params, "weight_decay": args.wd},
         ],
-        lr=cfg.lr,
-        betas=(cfg.beta1, cfg.beta2),
-        eps=cfg.eps,
+        lr=args.lr,
+        betas=(args.beta1, args.beta2),
+        eps=args.eps,
     )
     return optimizer

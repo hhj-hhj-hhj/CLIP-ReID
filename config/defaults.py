@@ -211,6 +211,63 @@ _C.SOLVER.STAGE2.EVAL_PERIOD = 10
 # contain 16 images per batch
 
 # ---------------------------------------------------------------------------- #
+# stage3
+# ---------------------------------------------------------------------------- #
+_C.SOLVER.STAGE3 = CN()
+
+_C.SOLVER.STAGE3.IMS_PER_BATCH = 64
+# Name of optimizer
+_C.SOLVER.STAGE3.OPTIMIZER_NAME = "Adam"
+# Number of max epoches
+_C.SOLVER.STAGE3.MAX_EPOCHS = 100
+# Base learning rate
+_C.SOLVER.STAGE3.BASE_LR = 3e-4
+# Whether using larger learning rate for fc layer
+_C.SOLVER.STAGE3.LARGE_FC_LR = False
+# Factor of learning bias
+_C.SOLVER.STAGE3.BIAS_LR_FACTOR = 1
+# Momentum
+_C.SOLVER.STAGE3.MOMENTUM = 0.9
+# Margin of triplet loss
+# Learning rate of SGD to learn the centers of center loss
+_C.SOLVER.STAGE3.CENTER_LR = 0.5
+# Balanced weight of center loss
+_C.SOLVER.STAGE3.CENTER_LOSS_WEIGHT = 0.0005
+
+# Settings of weight decay
+_C.SOLVER.STAGE3.WEIGHT_DECAY = 0.0005
+_C.SOLVER.STAGE3.WEIGHT_DECAY_BIAS = 0.0005
+
+# decay rate of learning rate
+_C.SOLVER.STAGE3.GAMMA = 0.1
+# decay step of learning rate
+_C.SOLVER.STAGE3.STEPS = (40, 70)
+# warm up factor
+_C.SOLVER.STAGE3.WARMUP_FACTOR = 0.01
+#  warm up epochs
+_C.SOLVER.STAGE3.WARMUP_EPOCHS = 5
+_C.SOLVER.STAGE3.WARMUP_LR_INIT = 0.01
+_C.SOLVER.STAGE3.LR_MIN = 0.000016
+
+
+_C.SOLVER.STAGE3.WARMUP_ITERS = 500
+# method of warm up, option: 'constant','linear'
+_C.SOLVER.STAGE3.WARMUP_METHOD = "linear"
+
+_C.SOLVER.STAGE3.COSINE_MARGIN = 0.5
+_C.SOLVER.STAGE3.COSINE_SCALE = 30
+
+# epoch number of saving checkpoints
+_C.SOLVER.STAGE3.CHECKPOINT_PERIOD = 10
+# iteration of display training log
+_C.SOLVER.STAGE3.LOG_PERIOD = 100
+# epoch number of validation
+_C.SOLVER.STAGE3.EVAL_PERIOD = 10
+# Number of images per batch
+# This is global, so if we have 8 GPUs and IMS_PER_BATCH = 128, each GPU will
+# contain 16 images per batch
+
+# ---------------------------------------------------------------------------- #
 # TEST
 # ---------------------------------------------------------------------------- #
 

@@ -19,7 +19,7 @@ def do_train_stage3(cfg,
                     center_criterion,
                     train_loader_stage2_all,
                     optimizer,
-                    optimizer_center,
+                    # optimizer_center,
                     scheduler,
                     loss_fn,
                     local_rank):
