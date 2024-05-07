@@ -8,12 +8,14 @@ from solver.scheduler_vi import cosine_lr
 from loss.make_loss import make_loss
 from processor.processor_vi_stage1 import do_train_stage1
 from processor.processor_vi_stage2 import do_train_stage2
+from processor.processor_vi_stage3 import do_train_stage3
 import random
 import torch
 import numpy as np
 import os
 import argparse
 from config import cfg
+from model.img2text import IMG2TEXT
 
 def set_seed(seed):
     torch.manual_seed(seed)
@@ -120,6 +122,22 @@ if __name__ == '__main__':
         loss_func,
         num_query, args.local_rank
     )
-    optimizer_3stage, optimizer_center_3stage = make_optimizer_3stage(cfg, model, center_criterion)
-    scheduler_3stage = cosine_lr(optimizer_3stage, cfg.SOLVER.STAGE3.MAX_EPOCHS, cfg.SOLVER.STAGE3.BASE_LR, cfg.SOLVER.STAGE3.WARMUP_EPOCHS)
 
+    img2text = IMG2TEXT()
+    optimizer_3stage = make_optimizer_3stage(args, img2text)
+    scheduler_3stage = cosine_lr(optimizer_3stage, cfg.SOLVER.STAGE3.BASE_LR,
+                                 cfg.SOLVER.STAGE3.WARMUP_EPOCHS * len(train_loader_stage2_all),
+                                 cfg.SOLVER.STAGE3.MAX_EPOCHS * len(train_loader_stage2_all))
+
+    do_train_stage3(
+        cfg,
+        model,
+        img2text,
+        center_criterion,
+        train_loader_stage2_all,
+        optimizer_3stage,
+        # optimizer_center_3stage,
+        scheduler_3stage,
+        loss_func,
+        args.local_rank
+    )
