@@ -76,6 +76,8 @@ class SYSUMM01(BaseImageDataset):
                 img_dir = os.path.join(dir_path, cam, id)
                 if os.path.isdir(img_dir):
                     new_files = sorted([img_dir + '\\' + i for i in os.listdir(img_dir)])
+                    # cclnet这里是随机选择一个图片，但是这里我改成了全部图片
+                    # files_rgb.append(random.choice(new_files))
                     files_rgb.extend(new_files)
 
         # gall_img = []

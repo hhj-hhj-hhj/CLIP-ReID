@@ -11,7 +11,7 @@ from torch.nn import functional as F
 from loss.supcontrast import SupConLoss
 
 
-def do_train_stage2(cfg,
+def do_train_stage24(cfg,
                     model,
                     center_criterion,
                     train_loader_stage2_rgb,
