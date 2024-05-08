@@ -74,6 +74,7 @@ SOLVER:
     LOG_PERIOD: 50
     EVAL_PERIOD: 60
     BIAS_LR_FACTOR: 2
+    WEIGHT : "output\\ViT-B-16_60_VI_img2text_64_VI.pth.pth"
 
     STEPS: [ 30, 50 ]
     GAMMA: 0.1

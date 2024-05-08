@@ -138,6 +138,8 @@ if __name__ == '__main__':
     print(len(train_loader_stage2_all))
 
     img2text = IMG2TEXT()
+    img2text.load_param(cfg.STAGE3.WEIGHT)
+
     optimizer_3stage = make_optimizer_3stage(args, img2text)
     scheduler_3stage = cosine_lr(optimizer_3stage, args.lr,
                                  cfg.SOLVER.STAGE3.WARMUP_ITERS,
