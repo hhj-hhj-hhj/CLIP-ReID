@@ -1,7 +1,7 @@
-2024-05-07 14:41:26,066 transreid_VI INFO: Saving model in the path :output
-2024-05-07 14:41:26,066 transreid_VI INFO: Namespace(beta1=0.9, beta2=0.98, config_file='configs/person/vit_clipreid.yml', eps=1e-06, local_rank=0, lr=0.0005, name=None, opts=[], warmup=10000, wd=0.2)
-2024-05-07 14:41:26,066 transreid_VI INFO: Loaded configuration file configs/person/vit_clipreid.yml
-2024-05-07 14:41:26,066 transreid_VI INFO: 
+2024-05-08 14:01:45,786 transreid_VI INFO: Saving model in the path :output
+2024-05-08 14:01:45,787 transreid_VI INFO: Namespace(beta1=0.9, beta2=0.98, config_file='configs/person/vit_clipreid.yml', eps=1e-06, local_rank=0, lr=0.0005, name=None, opts=[], warmup=10000, wd=0.2)
+2024-05-08 14:01:45,787 transreid_VI INFO: Loaded configuration file configs/person/vit_clipreid.yml
+2024-05-08 14:01:45,787 transreid_VI INFO: 
 MODEL:
   PRETRAIN_CHOICE: 'imagenet'
   METRIC_LOSS_TYPE: 'triplet'
@@ -116,7 +116,7 @@ OUTPUT_DIR: 'output'
 
 # CUDA_VISIBLE_DEVICES=3 python train_clipreid.py --config_file configs/person/vit_clipreid.yml
 
-2024-05-07 14:41:26,066 transreid_VI INFO: Running with config:
+2024-05-08 14:01:45,787 transreid_VI INFO: Running with config:
 DATALOADER:
   NUM_INSTANCE: 4
   NUM_WORKERS: 8
@@ -240,8 +240,3 @@ TEST:
   RE_RANKING: False
   WEIGHT: output\\ViT-B-16_60_VI.pth
 config_file: configs/person/vit_clipreid.yml
-2024-05-07 14:41:30,184 transreid_VI.train INFO: start training stage3
-2024-05-07 14:42:00,789 transreid_VI.train INFO: Epoch[1] Iteration[50/529] Loss: 5.407130 Base Lr: 1.09e-06
-2024-05-07 14:42:13,244 transreid_VI.train INFO: Epoch[1] Iteration[100/529] Loss: 5.223694 Base Lr: 1.19e-06
-2024-05-07 14:42:25,748 transreid_VI.train INFO: Epoch[1] Iteration[150/529] Loss: 5.428049 Base Lr: 1.28e-06
-2024-05-07 14:42:39,656 transreid_VI.train INFO: Epoch[1] Iteration[200/529] Loss: 4.898321 Base Lr: 1.38e-06
