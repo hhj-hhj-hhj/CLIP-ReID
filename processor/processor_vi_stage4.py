@@ -35,9 +35,11 @@ def do_train_stage4(cfg,
     _LOCAL_PROCESS_GROUP = None
     if device:
         model.to(local_rank)
+        img2text.to(local_rank)
         if torch.cuda.device_count() > 1:
             print('Using {} GPUs for training'.format(torch.cuda.device_count()))
             model = nn.DataParallel(model)
+            img2text = nn.DataParallel(img2text)
             num_classes = model.module.num_classes
         else:
             num_classes = model.num_classes
@@ -48,6 +50,9 @@ def do_train_stage4(cfg,
     evaluator = R1_mAP_eval(num_query, max_rank=50, feat_norm=cfg.TEST.FEAT_NORM)
     scaler = amp.GradScaler()
     xent = SupConLoss(device)
+
+    loss_rgb = nn.CrossEntropyLoss()
+    loss_ir = nn.CrossEntropyLoss()
 
     # train
     import time
@@ -77,8 +82,8 @@ def do_train_stage4(cfg,
 
             img_rgb = img_rgb.to(device)
             img_ir = img_ir.to(device)
-            label_rgb = label_rgb.to(device)
-            label_ir = label_ir.to(device)
+            label_rgb = label_rgb.to(device, dtype=torch.int64)
+            label_ir = label_ir.to(device, dtype=torch.int64)
 
             with amp.autocast(enabled=True):
                 score_rgb, feat_rgb, image_features_rgb = model(x=img_rgb, label=label_rgb)
@@ -90,13 +95,27 @@ def do_train_stage4(cfg,
                     text_features_rgb = get_text_features_change(token_features_rgb, clip_model, clip_model.dtype, "An infrared photo of")
                     text_features_ir = get_text_features_change(token_features_ir, clip_model, clip_model.dtype, "A visible photo of")
 
+                image_features_rgb = image_features_rgb / image_features_rgb.norm(dim=-1, keepdim=True)
+                image_features_ir = image_features_ir / image_features_ir.norm(dim=-1, keepdim=True)
+
+                text_features_rgb = text_features_rgb / text_features_rgb.norm(dim=-1, keepdim=True)
+                text_features_ir = text_features_ir / text_features_ir.norm(dim=-1, keepdim=True)
 
 
-                logits_rgb2ir = image_features_ir @ text_features_rgb.t()
-                logits_ir2rgb = image_features_rgb @ text_features_ir.t()
+                logit_scale = clip_model.logit_scale.exp()
+                logit_scale = logit_scale.mean()
 
-                loss_rgb2ir = loss_fn(score_rgb, feat_rgb, label_rgb, target_cam = None, i2tscore = logits_rgb2ir)
-                loss_ir2rgb = loss_fn(score_ir, feat_ir, label_ir, target_cam = None, i2tscore = logits_ir2rgb)
+                ground_truth_rgb = torch.arange(len(image_features_rgb)).long()
+                ground_truth_rgb = ground_truth_rgb.cuda(device, non_blocking=True)
+
+                ground_truth_ir = torch.arange(len(image_features_ir)).long()
+                ground_truth_ir = ground_truth_ir.cuda(device, non_blocking=True)
+
+                logits_rgb2ir = logit_scale * image_features_rgb @ text_features_ir.t()
+                logits_ir2rgb = logit_scale * image_features_ir @ text_features_rgb.t()
+
+                loss_ir2rgb = loss_rgb(logits_ir2rgb, ground_truth_rgb)
+                loss_rgb2ir = loss_ir(logits_rgb2ir, ground_truth_ir)
 
                 loss = (loss_ir2rgb + loss_rgb2ir) / 2
 
@@ -116,7 +135,7 @@ def do_train_stage4(cfg,
 
             acc = (acc_rgb2ir + acc_ir2rgb) / 2
 
-            loss_meter.update(loss.item(), img.shape[0])
+            loss_meter.update(loss.item(), img_rgb.shape[0])
             acc_meter.update(acc, 1)
 
             torch.cuda.synchronize()
