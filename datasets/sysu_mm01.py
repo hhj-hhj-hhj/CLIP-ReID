@@ -207,14 +207,14 @@ class SYSUData_Stage2(data.Dataset):
         self.train_thermal_image = np.load('D:\\hhj\\SYSU-MM01\\' + 'train_ir_resized_img.npy')
 
         ids_container = list(np.unique(self.train_color_label))
-        id2label = {id_: label for label, id_ in enumerate(ids_container)}
-        for i, label in enumerate(self.train_color_label):
-            self.train_color_label[i] = id2label[label]
-
-        ids_container = list(np.unique(self.train_thermal_label))
-        id2label = {id_: label for label, id_ in enumerate(ids_container)}
-        for i, label in enumerate(self.train_thermal_label):
-            self.train_thermal_label[i] = id2label[label]
+        # id2label = {id_: label for label, id_ in enumerate(ids_container)}
+        # for i, label in enumerate(self.train_color_label):
+        #     self.train_color_label[i] = id2label[label]
+        #
+        # ids_container = list(np.unique(self.train_thermal_label))
+        # id2label = {id_: label for label, id_ in enumerate(ids_container)}
+        # for i, label in enumerate(self.train_thermal_label):
+        #     self.train_thermal_label[i] = id2label[label]
 
         self.transform_train_rgb = transform_train_rgb
         self.transform_train_ir = transform_train_ir

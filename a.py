@@ -135,25 +135,25 @@ if __name__ == '__main__':
     #     num_query, args.local_rank
     # )
 
-    print(len(train_loader_stage2_all))
-
-    img2text = IMG2TEXT()
-    img2text.load_param(cfg.STAGE3.WEIGHT)
-
-    optimizer_3stage = make_optimizer_3stage(args, img2text)
-    scheduler_3stage = cosine_lr(optimizer_3stage, args.lr,
-                                 cfg.SOLVER.STAGE3.WARMUP_ITERS,
-                                 cfg.SOLVER.STAGE3.MAX_EPOCHS * len(train_loader_stage2_all))
-
-    do_train_stage3(
-        cfg,
-        model,
-        img2text,
-        center_criterion,
-        train_loader_stage2_all,
-        optimizer_3stage,
-        # optimizer_center_3stage,
-        scheduler_3stage,
-        loss_func,
-        args.local_rank
-    )
+    # print(len(train_loader_stage2_all))
+    #
+    # img2text = IMG2TEXT()
+    # img2text.load_param(cfg.STAGE3.WEIGHT)
+    #
+    # optimizer_3stage = make_optimizer_3stage(args, img2text)
+    # scheduler_3stage = cosine_lr(optimizer_3stage, args.lr,
+    #                              cfg.SOLVER.STAGE3.WARMUP_ITERS,
+    #                              cfg.SOLVER.STAGE3.MAX_EPOCHS * len(train_loader_stage2_all))
+    #
+    # do_train_stage3(
+    #     cfg,
+    #     model,
+    #     img2text,
+    #     center_criterion,
+    #     train_loader_stage2_all,
+    #     optimizer_3stage,
+    #     # optimizer_center_3stage,
+    #     scheduler_3stage,
+    #     loss_func,
+    #     args.local_rank
+    # )
