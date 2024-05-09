@@ -78,6 +78,10 @@ SOLVER:
 
     STEPS: [ 30, 50 ]
     GAMMA: 0.1
+
+    # CCLNET need
+    NUM_INSTANCES: 16
+    BATCH_SIZE: 4
   
 TEST:
   EVAL: True

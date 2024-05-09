@@ -16,6 +16,7 @@ import os
 import argparse
 from config import cfg
 from model.img2text import IMG2TEXT
+from datasets.make_dataloader_all import make_dataloader_all
 
 def set_seed(seed):
     torch.manual_seed(seed)
@@ -106,6 +107,12 @@ if __name__ == '__main__':
     #                     warmup_lr_init = cfg.SOLVER.STAGE1.WARMUP_LR_INIT, warmup_t = cfg.SOLVER.STAGE1.WARMUP_EPOCHS, noise_range = None)
 
     print('开始三阶段的训练')
+
+    train_sp_loader =  make_dataloader_all(cfg)
+
+    for i,batch in enumerate(train_sp_loader):
+
+        pass
 
     # do_train_stage1(
     #     cfg,

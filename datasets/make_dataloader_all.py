@@ -33,8 +33,8 @@ def val_collate_fn(batch):
     return torch.stack(imgs, dim=0), pids, camids, camids_batch, viewids, img_paths
 
 
-def make_dataloader(cfg):
-    train_transforms = T.Compose([
+def make_dataloader_all(cfg):
+    transforms_train = T.Compose([
         T.Resize(cfg.INPUT.SIZE_TRAIN, interpolation=3),
         T.RandomHorizontalFlip(p=cfg.INPUT.PROB),
         T.Pad(cfg.INPUT.PADDING),
@@ -49,6 +49,28 @@ def make_dataloader(cfg):
         T.Resize(cfg.INPUT.SIZE_TEST),
         T.ToTensor(),
         T.Normalize(mean=cfg.INPUT.PIXEL_MEAN, std=cfg.INPUT.PIXEL_STD)
+    ])
+
+    transform_train_rgb = T.Compose([
+        T.ToPILImage(),
+        T.Resize(cfg.INPUT.SIZE_TRAIN, interpolation=3),
+        T.RandomHorizontalFlip(p=cfg.INPUT.PROB),
+        T.Pad(cfg.INPUT.PADDING),
+        T.RandomCrop(cfg.INPUT.SIZE_TRAIN),
+        T.ToTensor(),
+        T.Normalize(mean=cfg.INPUT.PIXEL_MEAN, std=cfg.INPUT.PIXEL_STD),
+        RandomErasing(probability=cfg.INPUT.RE_PROB, mode='pixel', max_count=1, device='cpu'),
+    ])
+
+    transform_train_ir = T.Compose([
+        T.ToPILImage(),
+        T.Resize(cfg.INPUT.SIZE_TRAIN, interpolation=3),
+        T.RandomHorizontalFlip(p=cfg.INPUT.PROB),
+        T.Pad(cfg.INPUT.PADDING),
+        T.RandomCrop(cfg.INPUT.SIZE_TRAIN),
+        T.ToTensor(),
+        T.Normalize(mean=cfg.INPUT.PIXEL_MEAN, std=cfg.INPUT.PIXEL_STD),
+        RandomErasing(probability=cfg.INPUT.RE_PROB, mode='pixel', max_count=1, device='cpu'),
     ])
 
     # transform_train_rgb = T.Compose([
@@ -75,18 +97,18 @@ def make_dataloader(cfg):
 
     dataset = __factory[cfg.DATASETS.NAMES](root=cfg.DATASETS.ROOT_DIR)
 
-    train_sp_set = SYSUData_Stage2(cfg.DATASETS.ROOT_DIR, train_transforms, train_transforms)
+    train_sp_set = SYSUData_Stage2(cfg.DATASETS.ROOT_DIR, transform_train_rgb, transform_train_ir)
     color_pos, thermal_pos = GenIdx(train_sp_set.train_color_label, train_sp_set.train_thermal_label)
 
     sampler = IdentitySampler_nosk(train_sp_set.train_color_label, train_sp_set.train_thermal_label, color_pos,
                                    thermal_pos,
-                                   cfg.SOLVER.STAGE2.NUM_INSTANCES, cfg.SOLVER.STAGE2.BATCH_SIZE)
+                                   cfg.SOLVER.STAGE3.NUM_INSTANCES, cfg.SOLVER.STAGE3.BATCH_SIZE)
 
     train_sp_set.cIndex = sampler.index1
     train_sp_set.tIndex = sampler.index2
 
     train_sp_loader = DataLoader(train_sp_set,
-                                 batch_size=cfg.SOLVER.STAGE2.BATCH_SIZE * cfg.SOLVER.STAGE2.NUM_INSTANCES,
+                                 batch_size=cfg.SOLVER.STAGE3.BATCH_SIZE * cfg.SOLVER.STAGE3.NUM_INSTANCES,
                                  sampler=sampler,
                                  num_workers=0,
                                  drop_last=True)
