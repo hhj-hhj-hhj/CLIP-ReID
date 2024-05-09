@@ -46,6 +46,15 @@ def get_text_features(token_features, clip_model, dtype):
     text_features = encode_text_img(text, token_features, clip_model, dtype)
     return text_features
 
+def get_text_features_change(token_features, clip_model, dtype, text):
+    device = 'cuda'
+    text = clip.tokenize(text)
+    text = text.cuda(device, non_blocking=True)
+    text = text.view(1, -1)
+    text = text.repeat(token_features.size(0), 1)
+    text_features = encode_text_img(text, token_features, clip_model, dtype)
+    return text_features
+
 def get_loss_img2text(model, img2text, images, loss_img, loss_txt, clip_model):
 
     device = "cuda"

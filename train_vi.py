@@ -89,7 +89,7 @@ if __name__ == '__main__':
 
     model = make_model(cfg, num_class=num_classes_all, camera_num=camera_num_all, view_num = view_num_all)
 
-    loss_func, center_criterion = make_loss(cfg, num_classes=num_classes_all)
+    loss_func_stage2, center_criterion_stage2 = make_loss(cfg, num_classes=num_classes_all)
 
     optimizer_1stage = make_optimizer_1stage(cfg, model)
     scheduler_1stage = create_scheduler(optimizer_1stage, num_epochs = cfg.SOLVER.STAGE1.MAX_EPOCHS, lr_min = cfg.SOLVER.STAGE1.LR_MIN, \
@@ -107,21 +107,21 @@ if __name__ == '__main__':
         args.local_rank
     )
 
-    optimizer_2stage, optimizer_center_2stage = make_optimizer_2stage(cfg, model, center_criterion)
+    optimizer_2stage, optimizer_center_2stage = make_optimizer_2stage(cfg, model, center_criterion_stage2)
     scheduler_2stage = WarmupMultiStepLR(optimizer_2stage, cfg.SOLVER.STAGE2.STEPS, cfg.SOLVER.STAGE2.GAMMA, cfg.SOLVER.STAGE2.WARMUP_FACTOR,
                                   cfg.SOLVER.STAGE2.WARMUP_ITERS, cfg.SOLVER.STAGE2.WARMUP_METHOD)
 
     do_train_stage2(
         cfg,
         model,
-        center_criterion,
+        center_criterion_stage2,
         train_loader_stage2_rgb,
         train_loader_stage2_ir,
         val_loader,
         optimizer_2stage,
         optimizer_center_2stage,
         scheduler_2stage,
-        loss_func,
+        loss_func_stage2,
         num_query, args.local_rank
     )
 
@@ -131,15 +131,18 @@ if __name__ == '__main__':
                                  cfg.SOLVER.STAGE3.WARMUP_ITERS * len(train_loader_stage2_all),
                                  cfg.SOLVER.STAGE3.MAX_EPOCHS * len(train_loader_stage2_all))
 
+    loss_func_stage3, center_criterion_stage3 = make_loss(cfg, num_classes=num_classes_all)
+
+
     do_train_stage3(
         cfg,
         model,
         img2text,
-        center_criterion,
+        center_criterion_stage3,
         train_loader_stage2_all,
         optimizer_3stage,
         # optimizer_center_3stage,
         scheduler_3stage,
-        loss_func,
+        loss_func_stage3,
         args.local_rank
     )

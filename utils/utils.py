@@ -116,21 +116,21 @@ class My_IdentitySampler_nosk(Sampler):
 
     def __init__(self, train_color_label, train_thermal_label, color_pos, thermal_pos, num_pos, batchSize):
         uni_label_color = np.unique(train_color_label)
-        # uni_label_color = np.delete(uni_label_color,index=0)
         uni_label_thermal = np.unique(train_thermal_label)
-        # uni_label_thermal = np.delete(uni_label_thermal, index=0)
-        # self.n_classes = len(uni_label_color)
+        # Find the common labels between color and thermal
+        common_labels = np.intersect1d(uni_label_color, uni_label_thermal)
+
         print("len of uni_label_color:", len(uni_label_color))
         print("len of uni_label_thermal:", len(uni_label_thermal))
         print('IdentitySampler_nosk----')
 
         N = np.maximum(len(train_color_label), len(train_thermal_label))
         for j in range(int(N / (batchSize * num_pos)) + 1):
-            batch_idx_rgb = np.random.choice(uni_label_color, batchSize, replace=False)
-            batch_idx_ir = np.random.choice(uni_label_thermal, batchSize, replace=False)
+            # Choose batch indices from the common labels
+            batch_idx = np.random.choice(common_labels, batchSize, replace=False)
             for i in range(batchSize):
-                sample_color = np.random.choice(color_pos[batch_idx_rgb[i]], num_pos)
-                sample_thermal = np.random.choice(thermal_pos[batch_idx_ir[i]], num_pos)
+                sample_color = np.random.choice(color_pos[batch_idx[i]], num_pos)
+                sample_thermal = np.random.choice(thermal_pos[batch_idx[i]], num_pos)
 
                 if j == 0 and i == 0:
                     index1 = sample_color
@@ -142,6 +142,12 @@ class My_IdentitySampler_nosk(Sampler):
         self.index1 = index1
         self.index2 = index2
         self.N = N
+
+    def __iter__(self):
+        return iter(np.arange(len(self.index1)))
+
+    def __len__(self):
+        return self.N
 
     def __iter__(self):
         return iter(np.arange(len(self.index1)))

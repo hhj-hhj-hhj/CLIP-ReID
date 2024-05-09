@@ -65,8 +65,7 @@ if __name__ == '__main__':
     for i, batch in enumerate(train_sp_loader):
         imgs_rgb, imgs_ir, labels_rgb, labels_ir = batch
         print(len(imgs_rgb))
-        print(labels_rgb)
-        print(labels_ir)
+        print(torch.eq(labels_rgb, labels_ir))
         break
         # for (label_rgb, label_ir) in zip(labels_rgb, labels_ir):
         #     print(label_rgb, label_ir)

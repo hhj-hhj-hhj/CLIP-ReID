@@ -1,6 +1,5 @@
 import logging
 import os
-import time
 import torch
 import torch.nn as nn
 from utils.meter import AverageMeter
@@ -9,10 +8,12 @@ from torch.cuda import amp
 import torch.distributed as dist
 from torch.nn import functional as F
 from loss.supcontrast import SupConLoss
-
+from model.img2text import get_text_features_change, get_loss_img2text, get_loss
+from model.make_model_vi import load_clip_to_cpu
 
 def do_train_stage4(cfg,
                     model,
+                    img2text,
                     center_criterion,
                     train_loader_stage4,
                     val_loader,
@@ -21,16 +22,16 @@ def do_train_stage4(cfg,
                     scheduler,
                     loss_fn,
                     num_query, local_rank):
-    log_period = cfg.SOLVER.STAGE2.LOG_PERIOD
-    checkpoint_period = cfg.SOLVER.STAGE2.CHECKPOINT_PERIOD
-    eval_period = cfg.SOLVER.STAGE2.EVAL_PERIOD
+    log_period = cfg.SOLVER.STAGE4.LOG_PERIOD
+    checkpoint_period = cfg.SOLVER.STAGE4.CHECKPOINT_PERIOD
+    eval_period = cfg.SOLVER.STAGE4.EVAL_PERIOD
     instance = cfg.DATALOADER.NUM_INSTANCE
 
     device = "cuda"
-    epochs = cfg.SOLVER.STAGE2.MAX_EPOCHS
+    epochs = cfg.SOLVER.STAGE4.MAX_EPOCHS
 
     logger = logging.getLogger("transreid_VI.train")
-    logger.info('start training')
+    logger.info('start training stage4')
     _LOCAL_PROCESS_GROUP = None
     if device:
         model.to(local_rank)
@@ -53,31 +54,6 @@ def do_train_stage4(cfg,
     from datetime import timedelta
     all_start_time = time.monotonic()
 
-    # train
-    batch = cfg.SOLVER.STAGE2.IMS_PER_BATCH
-    i_ter = num_classes // batch
-
-    left = num_classes - batch * (num_classes // batch)
-
-
-    if left != 0:
-        i_ter = i_ter + 1
-    text_features_rgb = []
-    text_features_ir = []
-    with torch.no_grad():
-        for i in range(i_ter):
-            if i + 1 != i_ter:
-                l_list = torch.arange(i * batch, (i + 1) * batch)
-            else:
-                l_list = torch.arange(i * batch, num_classes)
-            with amp.autocast(enabled=True):
-                text_feature_rgb = model(label=l_list, img_modal = 1, get_text=True)
-                text_feature_ir = model(label=l_list, img_modal = 0, get_text=True)
-
-            text_features_rgb.append(text_feature_rgb.cpu())
-            text_features_ir.append(text_feature_ir.cpu())
-        text_features_rgb = torch.cat(text_features_rgb, 0).cuda()
-        text_features_ir = torch.cat(text_features_ir, 0).cuda()
 
     for epoch in range(1, epochs + 1):
         start_time = time.time()
@@ -88,27 +64,41 @@ def do_train_stage4(cfg,
         scheduler.step()
 
         model.train()
+        img2text.eval()
 
-        len_rgb = len(train_loader_stage4)
-        len_ir = len(train_loader_stage4)
 
-        for n_iter, (img, vid, target_cam, target_view) in enumerate(train_loader_stage4):
+        clip_model = load_clip_to_cpu(model.model_name, model.h_resolution, model.w_resolution,
+                                      model.vision_stride_size)
+        clip_model.to("cuda")
+
+        for n_iter, (img_rgb, img_ir, label_rgb, label_ir) in enumerate(train_loader_stage4):
             optimizer.zero_grad()
             optimizer_center.zero_grad()
-            img = img.to(device)
-            target = vid.to(device)
-            if cfg.MODEL.SIE_CAMERA:
-                target_cam = target_cam.to(device)
-            else:
-                target_cam = None
-            if cfg.MODEL.SIE_VIEW:
-                target_view = target_view.to(device)
-            else:
-                target_view = None
+
+            img_rgb = img_rgb.to(device)
+            img_ir = img_ir.to(device)
+            label_rgb = label_rgb.to(device)
+            label_ir = label_ir.to(device)
+
             with amp.autocast(enabled=True):
-                score, feat, image_features = model(x=img, label=target, cam_label=target_cam, view_label=target_view)
-                logits = image_features @ text_features_rgb.t()
-                loss = loss_fn(score, feat, target, target_cam, logits)
+                score_rgb, feat_rgb, image_features_rgb = model(x=img_rgb, label=label_rgb)
+                score_ir, feat_ir, image_features_ir = model(x=img_ir, label=label_ir)
+                with torch.no_grad():
+                    token_features_rgb = img2text(image_features_rgb)
+                    token_features_ir = img2text(image_features_ir)
+
+                    text_features_rgb = get_text_features_change(token_features_rgb, clip_model, clip_model.dtype, "An infrared photo of")
+                    text_features_ir = get_text_features_change(token_features_ir, clip_model, clip_model.dtype, "A visible photo of")
+
+
+
+                logits_rgb2ir = image_features_ir @ text_features_rgb.t()
+                logits_ir2rgb = image_features_rgb @ text_features_ir.t()
+
+                loss_rgb2ir = loss_fn(score_rgb, feat_rgb, label_rgb, target_cam = None, i2tscore = logits_rgb2ir)
+                loss_ir2rgb = loss_fn(score_ir, feat_ir, label_ir, target_cam = None, i2tscore = logits_ir2rgb)
+
+                loss = (loss_ir2rgb + loss_rgb2ir) / 2
 
             scaler.scale(loss).backward()
 
@@ -121,7 +111,10 @@ def do_train_stage4(cfg,
                 scaler.step(optimizer_center)
                 scaler.update()
 
-            acc = (logits.max(1)[1] == target).float().mean()
+            acc_rgb2ir = (logits_rgb2ir.max(1)[1] == label_ir).float().mean()
+            acc_ir2rgb = (logits_ir2rgb.max(1)[1] == label_rgb).float().mean()
+
+            acc = (acc_rgb2ir + acc_ir2rgb) / 2
 
             loss_meter.update(loss.item(), img.shape[0])
             acc_meter.update(acc, 1)
@@ -129,13 +122,13 @@ def do_train_stage4(cfg,
             torch.cuda.synchronize()
             if (n_iter + 1) % log_period == 0:
                 logger.info("Epoch[{}] Iteration[{}/{}] Loss: {:.3f}, Acc: {:.3f}, Base Lr: {:.2e}"
-                            .format(epoch, (n_iter + 1), len_rgb + len_ir,
+                            .format(epoch, (n_iter + 1), len(train_loader_stage4),
                                     loss_meter.avg, acc_meter.avg, scheduler.get_lr()[0]))
 
 
 
         end_time = time.time()
-        time_per_batch = (end_time - start_time) / (len_rgb + len_ir)
+        time_per_batch = (end_time - start_time) / (n_iter + 1)
         if cfg.MODEL.DIST_TRAIN:
             pass
         else:
@@ -146,10 +139,10 @@ def do_train_stage4(cfg,
             if cfg.MODEL.DIST_TRAIN:
                 if dist.get_rank() == 0:
                     torch.save(model.state_dict(),
-                               os.path.join(cfg.OUTPUT_DIR, cfg.MODEL.NAME + '_{}_VI.pth'.format(epoch)))
+                               os.path.join(cfg.OUTPUT_DIR, cfg.MODEL.NAME + '_{}_VI_stage4.pth'.format(epoch)))
             else:
                 torch.save(model.state_dict(),
-                           os.path.join(cfg.OUTPUT_DIR, cfg.MODEL.NAME + '_{}_VI.pth'.format(epoch)))
+                           os.path.join(cfg.OUTPUT_DIR, cfg.MODEL.NAME + '_{}_VI_stage4.pth'.format(epoch)))
 
         if epoch % eval_period == 0:
             if cfg.MODEL.DIST_TRAIN:

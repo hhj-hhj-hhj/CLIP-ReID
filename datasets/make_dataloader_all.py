@@ -8,7 +8,7 @@ from .sampler import RandomIdentitySampler
 from .sampler_ddp import RandomIdentitySampler_DDP
 import torch.distributed as dist
 from .sysu_mm01 import SYSUMM01, SYSUData_Stage2
-from utils.utils import GenIdx, IdentitySampler_nosk
+from utils.utils import GenIdx, IdentitySampler_nosk, My_IdentitySampler_nosk
 
 __factory = {
     'sysu_mm01': SYSUMM01
@@ -100,7 +100,7 @@ def make_dataloader_all(cfg):
     train_sp_set = SYSUData_Stage2(cfg.DATASETS.ROOT_DIR, transform_train_rgb, transform_train_ir)
     color_pos, thermal_pos = GenIdx(train_sp_set.train_color_label, train_sp_set.train_thermal_label)
 
-    sampler = IdentitySampler_nosk(train_sp_set.train_color_label, train_sp_set.train_thermal_label, color_pos,
+    sampler = My_IdentitySampler_nosk(train_sp_set.train_color_label, train_sp_set.train_thermal_label, color_pos,
                                    thermal_pos,
                                    cfg.SOLVER.STAGE3.NUM_INSTANCES, cfg.SOLVER.STAGE3.BATCH_SIZE)
 

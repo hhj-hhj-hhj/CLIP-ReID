@@ -1,7 +1,7 @@
 from utils.logger import setup_logger
 from datasets.make_dataloader_vi import make_dataloader
 from model.make_model_vi import make_model
-from solver.make_optimizer_prompt import make_optimizer_1stage, make_optimizer_2stage, make_optimizer_3stage
+from solver.make_optimizer_prompt import make_optimizer_1stage, make_optimizer_2stage, make_optimizer_3stage, make_optimizer_4stage
 from solver.scheduler_factory import create_scheduler
 from solver.lr_scheduler import WarmupMultiStepLR
 from solver.scheduler_vi import cosine_lr
@@ -9,6 +9,7 @@ from loss.make_loss import make_loss
 from processor.processor_vi_stage1 import do_train_stage1
 from processor.processor_vi_stage2 import do_train_stage2
 from processor.processor_vi_stage3 import do_train_stage3
+from processor.processor_vi_stage4 import do_train_stage4
 import random
 import torch
 import numpy as np
@@ -100,19 +101,14 @@ if __name__ == '__main__':
     model = make_model(cfg, num_class=num_classes_all, camera_num=camera_num_all, view_num = view_num_all)
     model.load_param(cfg.TEST.WEIGHT)
     #
-    loss_func, center_criterion = make_loss(cfg, num_classes=num_classes_all)
+    # loss_func_stage2, center_criterion_stage2 = make_loss(cfg, num_classes=num_classes_all)
 
     # optimizer_1stage = make_optimizer_1stage(cfg, model)
     # scheduler_1stage = create_scheduler(optimizer_1stage, num_epochs = cfg.SOLVER.STAGE1.MAX_EPOCHS, lr_min = cfg.SOLVER.STAGE1.LR_MIN, \
     #                     warmup_lr_init = cfg.SOLVER.STAGE1.WARMUP_LR_INIT, warmup_t = cfg.SOLVER.STAGE1.WARMUP_EPOCHS, noise_range = None)
 
-    print('开始三阶段的训练')
+    print('开始四阶段的训练')
 
-    train_sp_loader =  make_dataloader_all(cfg)
-
-    for i,batch in enumerate(train_sp_loader):
-
-        pass
 
     # do_train_stage1(
     #     cfg,
@@ -131,21 +127,21 @@ if __name__ == '__main__':
     # do_train_stage2(
     #     cfg,
     #     model,
-    #     center_criterion,
+    #     center_criterion_stage2,
     #     train_loader_stage2_rgb,
     #     train_loader_stage2_ir,
     #     val_loader,
     #     optimizer_2stage,
     #     optimizer_center_2stage,
     #     scheduler_2stage,
-    #     loss_func,
+    #     loss_func_stage2,
     #     num_query, args.local_rank
     # )
 
     # print(len(train_loader_stage2_all))
     #
-    # img2text = IMG2TEXT()
-    # img2text.load_param(cfg.STAGE3.WEIGHT)
+    img2text = IMG2TEXT()
+    img2text.load_param(cfg.STAGE3.WEIGHT)
     #
     # optimizer_3stage = make_optimizer_3stage(args, img2text)
     # scheduler_3stage = cosine_lr(optimizer_3stage, args.lr,
@@ -164,3 +160,31 @@ if __name__ == '__main__':
     #     loss_func,
     #     args.local_rank
     # )
+    # 开始之前先回收垃圾，降低内存
+    del train_loader_stage2_all, train_loader_stage2_rgb, train_loader_stage2_ir, train_loader_stage1_all, train_loader_stage1_rgb, train_loader_stage1_ir
+    # 强制进行垃圾回收
+    import gc
+    gc.collect()
+    # 删除成功
+    # 加载第四阶段数据集
+    train_loader_stage4 =  make_dataloader_all(cfg)
+
+    loss_func_stage4, center_criterion_stage4 = make_loss(cfg, num_classes=num_classes_all)
+    optimizer_4stage, optimizer_center_4stage = make_optimizer_4stage(cfg, model, center_criterion_stage4)
+    scheduler_4stage = WarmupMultiStepLR(optimizer_4stage, cfg.SOLVER.STAGE4.STEPS, cfg.SOLVER.STAGE4.GAMMA, cfg.SOLVER.STAGE2.WARMUP_FACTOR,
+                                  cfg.SOLVER.STAGE4.WARMUP_ITERS, cfg.SOLVER.STAGE4.WARMUP_METHOD)
+
+
+    do_train_stage4(
+        cfg,
+        model,
+        img2text,
+        center_criterion_stage4,
+        train_loader_stage4,
+        val_loader,
+        optimizer_4stage,
+        optimizer_center_4stage,
+        scheduler_4stage,
+        loss_func_stage4,
+        num_query, args.local_rank
+    )
