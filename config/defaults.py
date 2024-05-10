@@ -267,8 +267,8 @@ _C.SOLVER.STAGE3.EVAL_PERIOD = 10
 _C.SOLVER.STAGE3.WEIGHT = ""
 
 # cclnet所需参数
-_C.SOLVER.STAGE3.NUM_INSTANCES = 16
-_C.SOLVER.STAGE3.BATCH_SIZE = 4
+_C.SOLVER.STAGE3.NUM_INSTANCES = 1
+_C.SOLVER.STAGE3.BATCH_SIZE = 64
 # Number of images per batch
 # This is global, so if we have 8 GPUs and IMS_PER_BATCH = 128, each GPU will
 # contain 16 images per batch
