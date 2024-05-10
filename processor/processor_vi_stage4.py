@@ -102,8 +102,8 @@ def do_train_stage4(cfg,
                 text_features_ir = text_features_ir / text_features_ir.norm(dim=-1, keepdim=True)
 
 
-                logit_scale = clip_model.logit_scale.exp()
-                logit_scale = logit_scale.mean()
+                # logit_scale = clip_model.logit_scale.exp()
+                # logit_scale = logit_scale.mean()
 
                 ground_truth_rgb = torch.arange(len(image_features_rgb)).long()
                 ground_truth_rgb = ground_truth_rgb.cuda(device, non_blocking=True)
@@ -111,8 +111,11 @@ def do_train_stage4(cfg,
                 ground_truth_ir = torch.arange(len(image_features_ir)).long()
                 ground_truth_ir = ground_truth_ir.cuda(device, non_blocking=True)
 
-                logits_rgb2ir = logit_scale * image_features_rgb @ text_features_ir.t()
-                logits_ir2rgb = logit_scale * image_features_ir @ text_features_rgb.t()
+                # logits_rgb2ir = logit_scale * image_features_rgb @ text_features_ir.t()
+                # logits_ir2rgb = logit_scale * image_features_ir @ text_features_rgb.t()
+
+                logits_rgb2ir = image_features_rgb @ text_features_ir.t()
+                logits_ir2rgb = image_features_ir @ text_features_rgb.t()
 
                 loss_ir2rgb = loss_rgb(logits_ir2rgb, ground_truth_rgb)
                 loss_rgb2ir = loss_ir(logits_rgb2ir, ground_truth_ir)
